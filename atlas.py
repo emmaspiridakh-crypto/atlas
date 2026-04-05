@@ -59,60 +59,61 @@ DUTY_ROLE_ID = 1490338840395649266
 AUTOROLE_ID = 1490134521687969864
 
 # ============ WHITELIST / APPLICATIONS ============
-WHITELIST_MANAGER_ROLE_ID = 1490339511186489437       # <-- βάλε το ID
-WHITELIST_ROLE_ID         = 1490339131341930577    # <-- βάλε το ID (δίνεται μετά accept)
-STAFF_APP_ROLE_ID         = 1490134518768730204       # <-- βάλε το ID (δίνεται μετά accept)
-MANAGER_APP_ROLE_ID       = 1490134518768730204       # <-- βάλε το ID (δίνεται μετά accept)
+WHITELIST_MANAGER_ROLE_ID = 1490339511186489437
+WHITELIST_ROLE_ID         = 1490339131341930577
+STAFF_APP_ROLE_ID         = 1490134518768730204
+MANAGER_APP_ROLE_ID       = 1490134518768730204
 
-WHITELIST_PANEL_CHANNEL_ID  = 1490340915343134741    # <-- κανάλι που στέλνεις !whitelistpanel
-WHITELIST_RESULTS_CHANNEL_ID = 1490340158283972800   # <-- κανάλι που βλέπει το staff τις αιτήσεις
-WHITELIST_CATEGORY_ID       = 1490340549125865683     # <-- category για whitelist-username κανάλια
+WHITELIST_PANEL_CHANNEL_ID   = 1490340915343134741
+WHITELIST_RESULTS_CHANNEL_ID = 1490340158283972800
+WHITELIST_CATEGORY_ID        = 1490340549125865683
 
-STAFF_PANEL_CHANNEL_ID      = 1490134614541340834     # <-- κανάλι που στέλνεις !staffpanel
-STAFF_RESULTS_CHANNEL_ID    = 1490340185576181770     # <-- κανάλι που βλέπει το staff τις αιτήσεις
-STAFF_CATEGORY_ID           = 1490341195090755844     # <-- category για staff-username κανάλια
+STAFF_PANEL_CHANNEL_ID      = 1490134614541340834
+STAFF_RESULTS_CHANNEL_ID    = 1490340185576181770
+STAFF_CATEGORY_ID           = 1490341195090755844
 
-MANAGER_PANEL_CHANNEL_ID    = 1490134614541340834     # <-- κανάλι που στέλνεις !managerpanel
-MANAGER_RESULTS_CHANNEL_ID  = 1490340217687769259     # <-- κανάλι που βλέπει το staff τις αιτήσεις
-MANAGER_CATEGORY_ID         = 1490341277567549550     # <-- category για manager-username κανάλια
+MANAGER_PANEL_CHANNEL_ID    = 1490134614541340834
+MANAGER_RESULTS_CHANNEL_ID  = 1490340217687769259
+MANAGER_CATEGORY_ID         = 1490341277567549550
 
-DUTY_PANEL_CHANNEL_ID       = 1490341549719162971     # <-- κανάλι για το duty panel
-DUTY_LOG_CHANNEL_ID         = 1490341619059261510     # <-- κανάλι για duty logs
-DUTY_LEADERBOARD_CHANNEL_ID = 1490341549719162971     # <-- κανάλι για leaderboard
+DUTY_PANEL_CHANNEL_ID       = 1490341549719162971
+DUTY_LOG_CHANNEL_ID         = 1490341619059261510
+DUTY_LEADERBOARD_CHANNEL_ID = 1490341549719162971
 
-SECURITY_LOG_CHANNEL_ID     = 1490340271156756490     # <-- security-logs κανάλι
+SECURITY_LOG_CHANNEL_ID     = 1490340271156756490
 
 # ROLES ΠΟΥ ΜΠΟΡΟΥΝ ΝΑ ΚΑΝΟΥΝ ACCEPT/DENY
-APPLICATION_MANAGER_ROLES = [FOUNDER_ROLE_ID, WHITELIST_MANAGER_ROLE_ID, APPLICATION_MANAGER_ID]
+APPLICATION_MANAGER_ROLES = [FOUNDER_ROLE_ID, OWNER_ID, CO_OWNER_ID, WHITELIST_MANAGER_ROLE_ID, APPLICATION_MANAGER_ID]
 
 # ============ ΕΡΩΤΗΣΕΙΣ ============
 WHITELIST_QUESTIONS = [
     "Ποιο είναι το όνομα και η ηλικία σου (IRL);",
-    "Δώσε μια σύντομη περιγραφή του χαρακτήρα σου (προσωπικότητα, background, στόχοι).",    # <-- άλλαξέ τη
-    "Ποιο είναι το επάγγελμα ή η κύρια δραστηριότητα που θέλεις να ακολουθήσει ο χαρακτήρας σου;",  
+    "Δώσε μια σύντομη περιγραφή του χαρακτήρα σου (προσωπικότητα, background, στόχοι).",
+    "Ποιο είναι το επάγγελμα ή η κύρια δραστηριότητα που θέλεις να ακολουθήσει ο χαρακτήρας σου;",
     "Τι είναι το Powergaming; Δώσε παράδειγμα.",
     "Τι είναι το Metagaming; Δώσε παράδειγμα.",
     "Πώς αντιδράς όταν κάποιος κάνει RDM/VDM πάνω σου;",
     "Τι είναι το FailRP; Δώσε παράδειγμα.",
     "Τι περιμένεις από την κοινότητα και τι μπορείς να προσφέρεις εσύ;"
 ]
+
 STAFF_QUESTIONS = [
-    "Πόσο χρονών είσαι?",    # <-- άλλαξέ τη
-    "Πώς σε λένε στο discord?",    # <-- άλλαξέ τη
-    "Πόσες ώρες θα μπορείς να είσαι on duty την μέρα?", 
+    "Πόσο χρονών είσαι?",
+    "Πώς σε λένε στο discord?",
+    "Πόσες ώρες θα μπορείς να είσαι on duty την μέρα?",
     "Έχεις εμπειρία πανω στο staff κομμάτι? Αν ναι που?",
     "Τι θα κάνεις αν κάποιος φίλος σου ή άλλο staff κάνει abuse perms?",
     "Τι θα κανεις αν κάποιο member προσβάλει κάποιο αλλο άτομο ή staff?",
-    "Τι θα κανεις αν υπάρχουν πολλά άτομα στο support και είσαι μόνος σου?"
+    "Τι θα κανεις αν υπάρχουν πολλά άτομα στο support και είσαι μόνος σου?",
     "Τι βήματα θα ακολουθήσεις αν έρθει κάποιος παίχτης να αναφέρει ενα περιστατικό που έγινε in game?",
     "Τι θα κάνεις αν κάποιος χρήστης αναφέρει ότι έχει πέσει θύμα RDM/VDM;",
     "Γιατί να επιλέξουμε εσένα και όχι κάποιον άλλο υποψήφιο?"
 ]
 
 MANAGER_QUESTIONS = [
-    "Πόσο χρονών είσαι?",    # <-- άλλαξέ τη
-    "Πώς σε λένε στο discord?",    # <-- άλλαξέ τη
-    "Πόσες ώρες θα μπορείς να είσαι on duty την μέρα?", 
+    "Πόσο χρονών είσαι?",
+    "Πώς σε λένε στο discord?",
+    "Πόσες ώρες θα μπορείς να είσαι on duty την μέρα?",
     "Τι θέση manager θέλεις στον server?",
     "Έχεις εμπειρία πάνω στο κομμάτι management που θες να ασχοληθείς στον server? Αν ναι που?",
     "Τι θα κάνεις αν τα members τσακώνονται και ασκούν λεκτική βία?",
@@ -157,7 +158,8 @@ BOOSTS_CHANNEL_ID  = 1490134571147071538
 # ============================================
 
 def is_owner_or_coowner(user: discord.Member):
-    return any(r.id in (OWNER_ID, CO_OWNER_ID) for r in user.roles)
+    # Founder μπορεί να κάνει τα πάντα
+    return any(r.id in (FOUNDER_ROLE_ID, OWNER_ID, CO_OWNER_ID) for r in user.roles)
 
 def can_manage_applications(user: discord.Member):
     return any(r.id in APPLICATION_MANAGER_ROLES for r in user.roles)
@@ -239,7 +241,7 @@ async def on_voice_state_update(member, before, after):
     log   = bot.get_channel(VOICE_LOG_CHANNEL_ID)
 
     if after.channel and after.channel.id == TEMP_VOICE_CHANNEL_ID:
-        category    = guild.get_channel(TEMP_VOICE_CATEGORY_ID)
+        category     = guild.get_channel(TEMP_VOICE_CATEGORY_ID)
         temp_channel = await guild.create_voice_channel(
             name=f"{member.name}'s Support", category=category
         )
@@ -325,8 +327,8 @@ async def on_member_update(before, after):
             if entry.target.id == after.id:
                 if log:
                     embed = discord.Embed(title="➕ Role Added", color=discord.Color.green())
-                    embed.add_field(name="User", value=f"{after.mention}", inline=False)
-                    embed.add_field(name="Role", value=f"**{new_role.name}**", inline=False)
+                    embed.add_field(name="User",      value=f"{after.mention}", inline=False)
+                    embed.add_field(name="Role",      value=f"**{new_role.name}**", inline=False)
                     embed.add_field(name="Moderator", value=f"{entry.user.mention}", inline=False)
                     embed.set_footer(text=f"User ID: {after.id} | Role ID: {new_role.id}")
                     await log.send(embed=embed)
@@ -337,8 +339,8 @@ async def on_member_update(before, after):
             if entry.target.id == after.id:
                 if log:
                     embed = discord.Embed(title="➖ Role Removed", color=discord.Color.red())
-                    embed.add_field(name="User", value=f"{after.mention}", inline=False)
-                    embed.add_field(name="Role", value=f"**{removed_role.name}**", inline=False)
+                    embed.add_field(name="User",      value=f"{after.mention}", inline=False)
+                    embed.add_field(name="Role",      value=f"**{removed_role.name}**", inline=False)
                     embed.add_field(name="Moderator", value=f"{entry.user.mention}", inline=False)
                     embed.set_footer(text=f"User ID: {after.id} | Role ID: {removed_role.id}")
                     await log.send(embed=embed)
@@ -401,7 +403,7 @@ class TicketCloseView(discord.ui.View):
 
     @discord.ui.button(label="Close Ticket", style=discord.ButtonStyle.red, custom_id="close_ticket_button")
     async def close_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
-        guild      = interaction.guild
+        guild       = interaction.guild
         log_channel = guild.get_channel(TICKET_LOG_ID)
         if log_channel:
             embed = discord.Embed(title="❌ Ticket Closed",
@@ -428,8 +430,8 @@ class MainTicketSelect(discord.ui.Select):
                          min_values=1, max_values=1, options=options)
 
     async def callback(self, interaction: discord.Interaction):
-        guild  = interaction.guild
-        author = interaction.user
+        guild    = interaction.guild
+        author   = interaction.user
         category = guild.get_channel(MAIN_TICKET_CATEGORY_ID)
         if not category:
             return await interaction.response.send_message("Η κατηγορία ticket δεν βρέθηκε.", ephemeral=True)
@@ -534,16 +536,14 @@ class JobTicketPanel(discord.ui.View):
 # SECTION 12 — APPLICATION SYSTEM (WHITELIST / STAFF / MANAGER)
 # ============================================
 
-# --- Storage for active sessions ---
-active_application_sessions = {}  # channel_id -> {user_id, type, questions, answers, q_index}
+active_application_sessions = {}
 
-# ---- REASON MODAL ----
 class ReasonModal(discord.ui.Modal):
     def __init__(self, action: str, target_user_id: int, app_type: str, original_message: discord.Message):
         super().__init__(title=f"{'Accept' if action == 'accept' else 'Deny'} — Reason")
-        self.action          = action
-        self.target_user_id  = target_user_id
-        self.app_type        = app_type
+        self.action           = action
+        self.target_user_id   = target_user_id
+        self.app_type         = app_type
         self.original_message = original_message
 
         self.reason_input = discord.ui.TextInput(
@@ -562,7 +562,6 @@ class ReasonModal(discord.ui.Modal):
         action_text = "✅ Accepted" if self.action == "accept" else "❌ Denied"
         color       = discord.Color.green() if self.action == "accept" else discord.Color.red()
 
-        # Edit original embed — remove buttons, add who decided
         original_embed = self.original_message.embeds[0] if self.original_message.embeds else None
         if original_embed:
             original_embed.add_field(
@@ -573,7 +572,6 @@ class ReasonModal(discord.ui.Modal):
             original_embed.color = color
             await self.original_message.edit(embed=original_embed, view=None)
 
-        # Give role / send DM
         if self.action == "accept":
             role_id = {
                 "whitelist": WHITELIST_ROLE_ID,
@@ -614,15 +612,11 @@ class ReasonModal(discord.ui.Modal):
             ephemeral=True
         )
 
-# ---- ACCEPT / DENY VIEW (σε staff channel) ----
 class ApplicationDecisionView(discord.ui.View):
     def __init__(self, target_user_id: int, app_type: str):
         super().__init__(timeout=None)
         self.target_user_id = target_user_id
         self.app_type       = app_type
-
-    def build_custom_id(self, action):
-        return f"app_{action}_{self.app_type}_{self.target_user_id}"
 
     @discord.ui.button(label="✅ Accept with Reason", style=discord.ButtonStyle.green, custom_id="app_accept_placeholder")
     async def accept_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -638,7 +632,6 @@ class ApplicationDecisionView(discord.ui.View):
         modal = ReasonModal("deny", self.target_user_id, self.app_type, interaction.message)
         await interaction.response.send_modal(modal)
 
-# ---- START BUTTON (μέσα στο whitelist/staff/manager channel) ----
 class StartApplicationView(discord.ui.View):
     def __init__(self, app_type: str):
         super().__init__(timeout=None)
@@ -675,7 +668,6 @@ class StartApplicationView(discord.ui.View):
             f"**Ερώτηση 1/{len(questions)}:**\n{questions[0]}"
         )
 
-# ---- SEND BUTTON (τέλος ερωτήσεων) ----
 class SendApplicationView(discord.ui.View):
     def __init__(self, app_type: str, user_id: int, questions: list, answers: list):
         super().__init__(timeout=None)
@@ -690,7 +682,6 @@ class SendApplicationView(discord.ui.View):
             return await interaction.response.send_message("❌ Δεν είσαι εσύ αυτός που κάνει αίτηση.", ephemeral=True)
 
         guild = interaction.guild
-
         results_channel_id = {
             "whitelist": WHITELIST_RESULTS_CHANNEL_ID,
             "staff":     STAFF_RESULTS_CHANNEL_ID,
@@ -698,22 +689,20 @@ class SendApplicationView(discord.ui.View):
         }.get(self.app_type)
 
         results_channel = guild.get_channel(results_channel_id)
-
-        # Build embed
         member = guild.get_member(self.user_id)
-        embed  = discord.Embed(
+
+        embed = discord.Embed(
             title=f"📋 Αίτηση {self.app_type.capitalize()} — {member.display_name if member else self.user_id}",
             color=discord.Color.blurple()
         )
         embed.set_author(name=str(member), icon_url=member.avatar.url if member and member.avatar else None)
 
-        for i, (q, a) in enumerate(zip(self.questions, self.answers)):
+        for q, a in zip(self.questions, self.answers):
             embed.add_field(name=f"❓ {q}", value=f"💬 {a}", inline=False)
 
         embed.set_footer(text=f"User ID: {self.user_id}")
 
         view = ApplicationDecisionView(self.user_id, self.app_type)
-
         if results_channel:
             await results_channel.send(embed=embed, view=view)
 
@@ -722,11 +711,9 @@ class SendApplicationView(discord.ui.View):
             view=None
         )
 
-        # Clean session
         if interaction.channel.id in active_application_sessions:
             del active_application_sessions[interaction.channel.id]
 
-# ---- MESSAGE HANDLER ΓΙΑ ΕΡΩΤΗΣΕΙΣ ----
 async def handle_application_message(message: discord.Message):
     channel_id = message.channel.id
     if channel_id not in active_application_sessions:
@@ -747,7 +734,6 @@ async def handle_application_message(message: discord.Message):
             f"**Ερώτηση {q_index + 1}/{len(questions)}:**\n{questions[q_index]}"
         )
     else:
-        # All questions answered
         view = SendApplicationView(session["type"], session["user_id"], questions, session["answers"])
         await message.channel.send(
             "✅ Απάντησες σε όλες τις ερωτήσεις! Πάτα **Send** για να στείλεις την αίτησή σου.",
@@ -756,7 +742,6 @@ async def handle_application_message(message: discord.Message):
 
     return True
 
-# ---- PANEL BUTTON (whitelist/staff/manager) ----
 class ApplicationPanelView(discord.ui.View):
     def __init__(self, app_type: str):
         super().__init__(timeout=None)
@@ -780,11 +765,9 @@ class ApplicationPanelView(discord.ui.View):
             "manager":   MANAGER_CATEGORY_ID,
         }.get(self.app_type)
 
-        category = guild.get_channel(category_id)
-
+        category     = guild.get_channel(category_id)
         channel_name = f"{self.app_type}-{author.name}".replace(" ", "-").lower()
 
-        # Check if already exists
         existing = discord.utils.get(guild.text_channels, name=channel_name)
         if existing:
             return await interaction.response.send_message(
@@ -801,9 +784,7 @@ class ApplicationPanelView(discord.ui.View):
                 overwrites[role] = discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
 
         channel = await guild.create_text_channel(
-            name=channel_name,
-            category=category,
-            overwrites=overwrites
+            name=channel_name, category=category, overwrites=overwrites
         )
 
         title_map = {
@@ -833,26 +814,23 @@ class DutyView(discord.ui.View):
 
     @discord.ui.button(label="🟢 On Duty", style=discord.ButtonStyle.green, custom_id="duty_on")
     async def on_duty(self, interaction: discord.Interaction, button: discord.ui.Button):
-        user_id = str(interaction.user.id)
-        guild   = interaction.guild
-
+        user_id   = str(interaction.user.id)
+        guild     = interaction.guild
         duty_role = guild.get_role(DUTY_ROLE_ID)
+
         if duty_role in interaction.user.roles:
             return await interaction.response.send_message("Είσαι ήδη On Duty!", ephemeral=True)
 
-        # Give role
         if duty_role:
             try:
                 await interaction.user.add_roles(duty_role)
             except:
                 pass
 
-        # Save start time
         duty_data[user_id] = duty_data.get(user_id, {"total_seconds": 0})
         duty_data[user_id]["start_time"] = time.time()
         save_duty_data(duty_data)
 
-        # Log
         log = bot.get_channel(DUTY_LOG_CHANNEL_ID)
         if log:
             embed = discord.Embed(title="🟢 On Duty",
@@ -873,14 +851,12 @@ class DutyView(discord.ui.View):
         if duty_role not in interaction.user.roles:
             return await interaction.response.send_message("Δεν είσαι On Duty!", ephemeral=True)
 
-        # Remove role
         if duty_role:
             try:
                 await interaction.user.remove_roles(duty_role)
             except:
                 pass
 
-        # Calculate time
         session_seconds = 0
         if user_id in duty_data and "start_time" in duty_data[user_id]:
             session_seconds = time.time() - duty_data[user_id]["start_time"]
@@ -888,11 +864,10 @@ class DutyView(discord.ui.View):
             duty_data[user_id].pop("start_time", None)
             save_duty_data(duty_data)
 
-        hours, rem   = divmod(int(session_seconds), 3600)
+        hours, rem    = divmod(int(session_seconds), 3600)
         minutes, secs = divmod(rem, 60)
-        duration_str = f"{hours}ω {minutes}λ {secs}δ"
+        duration_str  = f"{hours}ω {minutes}λ {secs}δ"
 
-        # Log
         log = bot.get_channel(DUTY_LOG_CHANNEL_ID)
         if log:
             embed = discord.Embed(title="🔴 Off Duty",
@@ -905,7 +880,6 @@ class DutyView(discord.ui.View):
 
         await interaction.response.send_message(f"✅ Βγήκες **Off Duty**! Ήσουν on duty για **{duration_str}**.", ephemeral=True)
 
-# ---- LEADERBOARD ----
 async def update_duty_leaderboard(guild: discord.Guild):
     ch = guild.get_channel(DUTY_LEADERBOARD_CHANNEL_ID)
     if not ch:
@@ -917,9 +891,8 @@ async def update_duty_leaderboard(guild: discord.Guild):
         reverse=True
     )
 
-    embed = discord.Embed(title="🏆 Duty Leaderboard", color=discord.Color.gold(),
-                          timestamp=discord.utils.utcnow())
-
+    embed  = discord.Embed(title="🏆 Duty Leaderboard", color=discord.Color.gold(),
+                           timestamp=discord.utils.utcnow())
     medals = ["🥇", "🥈", "🥉"]
     desc   = ""
     for i, (uid, secs) in enumerate(sorted_users[:10]):
@@ -933,7 +906,6 @@ async def update_duty_leaderboard(guild: discord.Guild):
     embed.description = desc or "Κανένας δεν έχει κάνει duty ακόμα."
     embed.set_footer(text="Ανανεώνεται αυτόματα")
 
-    # Try to edit last message or send new
     async for msg in ch.history(limit=5):
         if msg.author == guild.me:
             await msg.edit(embed=embed)
@@ -944,21 +916,15 @@ async def update_duty_leaderboard(guild: discord.Guild):
 # SECTION 14 — SECURITY SYSTEM
 # ============================================
 
-# Spam tracker: {user_id: [timestamps]}
-spam_tracker = {}
-
-URL_PATTERN = re.compile(
-    r"(https?://|www\.)\S+|discord\.gg/\S+",
-    re.IGNORECASE
-)
-
-# Bot join tracker για verification
-pending_bots = {}  # bot_id -> message in security log
+spam_tracker    = {}
+URL_PATTERN     = re.compile(r"(https?://|www\.)\S+|discord\.gg/\S+", re.IGNORECASE)
+pending_bots    = {}
+ban_kick_tracker = {}
 
 class BotVerificationView(discord.ui.View):
     def __init__(self, bot_member: discord.Member):
         super().__init__(timeout=None)
-        self.bot_member = bot_member
+        self.bot_member           = bot_member
         self.accept_btn.custom_id = f"bot_accept_{bot_member.id}"
         self.deny_btn.custom_id   = f"bot_deny_{bot_member.id}"
 
@@ -988,26 +954,20 @@ class BotVerificationView(discord.ui.View):
         )
         await interaction.response.send_message("❌ Bot denied and kicked.", ephemeral=True)
 
-# Ban/Kick tracker για anti mass action
-ban_kick_tracker = {}  # user_id -> [timestamps]
-
 @bot.event
 async def on_member_ban(guild, user):
     await _track_mass_action(guild, user, "ban")
 
 @bot.event
 async def on_member_remove(member):
-    # Check if it was a kick via audit log
     await asyncio.sleep(1)
     async for entry in member.guild.audit_logs(limit=3, action=discord.AuditLogAction.kick):
         if entry.target.id == member.id and (datetime.datetime.utcnow() - entry.created_at.replace(tzinfo=None)).seconds < 5:
             await _track_mass_action(member.guild, entry.user, "kick")
             break
 
-    # Update counters
     await update_voice_channels(member.guild)
 
-    # Leave log
     log = bot.get_channel(MEMBER_LEAVE_LOG_CHANNEL_ID)
     if log:
         embed = discord.Embed(title="🔴 Member Left",
@@ -1025,11 +985,9 @@ async def _track_mass_action(guild: discord.Guild, moderator, action_type: str):
         ban_kick_tracker[uid] = []
 
     ban_kick_tracker[uid].append(now)
-    # Keep only last 10 seconds
     ban_kick_tracker[uid] = [t for t in ban_kick_tracker[uid] if now - t < 10]
 
     if len(ban_kick_tracker[uid]) >= 3:
-        # Mass action detected
         ban_kick_tracker[uid] = []
         mod_member = guild.get_member(int(uid))
         sec_log    = bot.get_channel(SECURITY_LOG_CHANNEL_ID)
@@ -1040,7 +998,6 @@ async def _track_mass_action(guild: discord.Guild, moderator, action_type: str):
                 await mod_member.timeout(duration, reason=f"Mass {action_type} detected")
             except:
                 pass
-
             if sec_log:
                 embed = discord.Embed(
                     title=f"⚠️ Mass {action_type.upper()} Detected!",
@@ -1060,8 +1017,8 @@ async def on_message(message: discord.Message):
         await bot.process_commands(message)
         return
 
-    guild  = message.guild
-    author = message.author
+    guild   = message.guild
+    author  = message.author
     sec_log = bot.get_channel(SECURITY_LOG_CHANNEL_ID) if guild else None
 
     # ---- ANTI-LINK ----
@@ -1072,8 +1029,7 @@ async def on_message(message: discord.Message):
             except:
                 pass
             try:
-                duration = datetime.timedelta(hours=1)
-                await author.timeout(duration, reason="Link detected")
+                await author.timeout(datetime.timedelta(hours=1), reason="Link detected")
             except:
                 pass
             if sec_log:
@@ -1100,8 +1056,7 @@ async def on_message(message: discord.Message):
             spam_tracker[uid] = []
             if not author.guild_permissions.administrator:
                 try:
-                    duration = datetime.timedelta(minutes=10)
-                    await author.timeout(duration, reason="Spam detected")
+                    await author.timeout(datetime.timedelta(minutes=10), reason="Spam detected")
                 except:
                     pass
                 if sec_log:
@@ -1120,14 +1075,13 @@ async def on_message(message: discord.Message):
         await bot.process_commands(message)
 
 # ============================================
-# SECTION 16 — ON MEMBER JOIN (BOT VERIFICATION + AUTOROLE + LOG)
+# SECTION 16 — ON MEMBER JOIN
 # ============================================
 
 @bot.event
 async def on_member_join(member: discord.Member):
     guild = member.guild
 
-    # BOT VERIFICATION
     if member.bot:
         sec_log = bot.get_channel(SECURITY_LOG_CHANNEL_ID)
         if sec_log:
@@ -1143,7 +1097,6 @@ async def on_member_join(member: discord.Member):
             pending_bots[str(member.id)] = msg.id
         return
 
-    # AUTOROLE
     role = guild.get_role(AUTOROLE_ID)
     if role:
         try:
@@ -1151,7 +1104,6 @@ async def on_member_join(member: discord.Member):
         except:
             pass
 
-    # JOIN LOG
     log = bot.get_channel(MEMBER_JOIN_LOG_CHANNEL_ID)
     if log:
         embed = discord.Embed(title="🟢 Member Joined",
@@ -1204,8 +1156,7 @@ async def timeout(ctx, member: discord.Member = None, minutes: int = None, *, re
         return await ctx.reply("❌ Δεν έχεις δικαίωμα να κάνεις timeout.")
     if not member or not minutes:
         return await ctx.reply("Χρήση: `!timeout @user <minutes> <reason>`")
-    duration = datetime.timedelta(minutes=minutes)
-    await member.timeout(duration, reason=reason)
+    await member.timeout(datetime.timedelta(minutes=minutes), reason=reason)
     await ctx.reply(f"⏳ Ο χρήστης **{member}** μπήκε timeout για {minutes} λεπτά.")
     log = bot.get_channel(BOT_LOG_ID)
     if log:
@@ -1235,9 +1186,9 @@ async def say(ctx, *, message: str):
 
 @bot.command()
 async def dmall(ctx, *, message: str):
-    ceo_role = ctx.guild.get_role(FOUNDER_ROLE_ID)
-    if ceo_role not in ctx.author.roles:
-        return await ctx.reply("❌ Μόνο ο CEO μπορεί να χρησιμοποιήσει αυτή την εντολή.")
+    founder_role = ctx.guild.get_role(FOUNDER_ROLE_ID)
+    if founder_role not in ctx.author.roles:
+        return await ctx.reply("❌ Μόνο ο Founder μπορεί να χρησιμοποιήσει αυτή την εντολή.")
     sent = 0
     for member in ctx.guild.members:
         if member.bot:
@@ -1270,10 +1221,11 @@ async def panel(ctx):
     embed = discord.Embed(title="📌 Atlas Roleplay — Command Panel",
                           description="Όλες οι βασικές εντολές του bot.",
                           color=discord.Color.dark_gray())
-    embed.add_field(name="🛠 Moderation",  value="`!ban`, `!kick`, `!timeout`, `!clearmessage`", inline=False)
-    embed.add_field(name="📊 Info",        value="`!serverstatus`", inline=False)
-    embed.add_field(name="🧰 Utility",     value="`!say`, `!dmall`", inline=False)
-    embed.add_field(name="🟢 Duty",        value="`!dutyleaderboard`", inline=False)
+    embed.add_field(name="🛠 Moderation",   value="`!ban`, `!kick`, `!timeout`, `!clearmessage`", inline=False)
+    embed.add_field(name="📊 Info",         value="`!serverstatus`", inline=False)
+    embed.add_field(name="🧰 Utility",      value="`!say`, `!dmall`", inline=False)
+    embed.add_field(name="📋 Applications", value="`!whitelistpanel`, `!staffpanel`, `!managerpanel`", inline=False)
+    embed.add_field(name="🟢 Duty",         value="`!dutypanel`, `!dutyleaderboard`", inline=False)
     await ctx.reply(embed=embed)
 
 # ============================================
