@@ -45,42 +45,49 @@ GUILD_ID = 1490079978300117212
 # ============================================
 
 # ROLE IDs
-FOUNDER_ROLE_ID = 1490084094749573151
-OWNER_ID = 1490084247682285699
-CO_OWNER_ID = 1490136469287993464
-DEVELOPER_ID = 1490134524221460621
-MANAGER_ID = 1490134503249936525
-STAFF_ID = 1490088402656170045
-JOBORG_ID = 1490338701799194767
+FOUNDER_ROLE_ID        = 1490084094749573151
+OWNER_ID               = 1490084247682285699
+CO_OWNER_ID            = 1490136469287993464
+DEVELOPER_ID           = 1490134524221460621
+MANAGER_ID             = 1490134503249936525
+STAFF_ID               = 1490088402656170045
+JOBORG_ID              = 1490338701799194767
 APPLICATION_MANAGER_ID = 1490134509830803507
-DUTY_ROLE_ID = 1490338840395649266
+DUTY_ROLE_ID           = 1490338840395649266
 
 # AUTOROLE
 AUTOROLE_ID = 1490134521687969864
 
 # ============ WHITELIST / APPLICATIONS ============
-WHITELIST_MANAGER_ROLE_ID = 1490339511186489437
-WHITELIST_ROLE_ID         = 1490339131341930577
-STAFF_APP_ROLE_ID         = 1490134518768730204
-MANAGER_APP_ROLE_ID       = 1490134518768730204
+WHITELIST_MANAGER_ROLE_ID    = 1490339511186489437
+WHITELIST_ROLE_ID            = 1490339131341930577
+STAFF_APP_ROLE_ID            = 1490134518768730204
+MANAGER_APP_ROLE_ID          = 1490134518768730204
 
 WHITELIST_PANEL_CHANNEL_ID   = 1490340915343134741
 WHITELIST_RESULTS_CHANNEL_ID = 1490340158283972800
 WHITELIST_CATEGORY_ID        = 1490340549125865683
 
-STAFF_PANEL_CHANNEL_ID      = 1490134614541340834
-STAFF_RESULTS_CHANNEL_ID    = 1490340185576181770
-STAFF_CATEGORY_ID           = 1490341195090755844
+STAFF_PANEL_CHANNEL_ID       = 1490134614541340834
+STAFF_RESULTS_CHANNEL_ID     = 1490340185576181770
+STAFF_CATEGORY_ID            = 1490341195090755844
 
-MANAGER_PANEL_CHANNEL_ID    = 1490134614541340834
-MANAGER_RESULTS_CHANNEL_ID  = 1490340217687769259
-MANAGER_CATEGORY_ID         = 1490341277567549550
+MANAGER_PANEL_CHANNEL_ID     = 1490134614541340834
+MANAGER_RESULTS_CHANNEL_ID   = 1490340217687769259
+MANAGER_CATEGORY_ID          = 1490341277567549550
 
-DUTY_PANEL_CHANNEL_ID       = 1490341549719162971
-DUTY_LOG_CHANNEL_ID         = 1490341619059261510
-DUTY_LEADERBOARD_CHANNEL_ID = 1490341549719162971
+DUTY_PANEL_CHANNEL_ID        = 1490341549719162971
+DUTY_LOG_CHANNEL_ID          = 1490341619059261510
+DUTY_LEADERBOARD_CHANNEL_ID  = 1490341549719162971
 
-SECURITY_LOG_CHANNEL_ID     = 1490340271156756490
+SECURITY_LOG_CHANNEL_ID      = 1490340271156756490
+
+# ============ INVITE TRACKER ============
+INVITE_LOG_CHANNEL_ID = 1490493231107145820  # <-- βάλε το ID του καναλιού για invite logs
+
+# ============ PANEL IMAGES ============
+SERVER_BANNER_URL    = "https://i.imgur.com/Ef5IrZM.jpeg"  # <-- μεγάλη εικόνα server
+SERVER_THUMBNAIL_URL = "https://i.imgur.com/tn7Q8sf.png"  # <-- μικρό thumbnail
 
 # ROLES ΠΟΥ ΜΠΟΡΟΥΝ ΝΑ ΚΑΝΟΥΝ ACCEPT/DENY
 APPLICATION_MANAGER_ROLES = [FOUNDER_ROLE_ID, OWNER_ID, CO_OWNER_ID, WHITELIST_MANAGER_ROLE_ID, APPLICATION_MANAGER_ID]
@@ -133,19 +140,19 @@ TEMP_VOICE_CATEGORY_ID = 1490134557272313947
 TEMP_VOICE_CHANNEL_ID  = 1490134590608642179
 
 # LOG CHANNELS
-ON_OFF_DUTY_LOG_ID              = 1490341619059261510
-BOT_LOG_ID                      = 1490134570056683670
-MESSAGE_EDIT_LOG_CHANNEL_ID     = 1490134573986873475
-MESSAGE_DELETE_LOG_CHANNEL_ID   = 1490134573986873475
-MEMBER_JOIN_LOG_CHANNEL_ID      = 1490134577933582387
-MEMBER_LEAVE_LOG_CHANNEL_ID     = 1490134577933582387
-ROLE_UPDATE_LOG_CHANNEL_ID      = 1490134580282261534
-VOICE_LOG_CHANNEL_ID            = 1490134572225134702
-CHANNEL_CREATE_LOG_CHANNEL_ID   = 1490134581217591366
-CHANNEL_DELETE_LOG_CHANNEL_ID   = 1490134581217591366
-ROLE_CREATE_LOG_CHANNEL_ID      = 1490134580282261534
-ROLE_DELETE_LOG_CHANNEL_ID      = 1490134580282261534
-TICKET_LOG_ID                   = 1490134569025011784
+ON_OFF_DUTY_LOG_ID            = 1490341619059261510
+BOT_LOG_ID                    = 1490134570056683670
+MESSAGE_EDIT_LOG_CHANNEL_ID   = 1490134573986873475
+MESSAGE_DELETE_LOG_CHANNEL_ID = 1490134573986873475
+MEMBER_JOIN_LOG_CHANNEL_ID    = 1490134577933582387
+MEMBER_LEAVE_LOG_CHANNEL_ID   = 1490134577933582387
+ROLE_UPDATE_LOG_CHANNEL_ID    = 1490134580282261534
+VOICE_LOG_CHANNEL_ID          = 1490134572225134702
+CHANNEL_CREATE_LOG_CHANNEL_ID = 1490134581217591366
+CHANNEL_DELETE_LOG_CHANNEL_ID = 1490134581217591366
+ROLE_CREATE_LOG_CHANNEL_ID    = 1490134580282261534
+ROLE_DELETE_LOG_CHANNEL_ID    = 1490134580282261534
+TICKET_LOG_ID                 = 1490134569025011784
 
 # VOICE COUNTER CHANNELS
 MEMBERS_CHANNEL_ID = 1490134565145022544
@@ -158,7 +165,6 @@ BOOSTS_CHANNEL_ID  = 1490134571147071538
 # ============================================
 
 def is_owner_or_coowner(user: discord.Member):
-    # Founder μπορεί να κάνει τα πάντα
     return any(r.id in (FOUNDER_ROLE_ID, OWNER_ID, CO_OWNER_ID) for r in user.roles)
 
 def can_manage_applications(user: discord.Member):
@@ -201,6 +207,29 @@ def save_security_data(data):
         json.dump(data, f, indent=4)
 
 security_data = load_security_data()
+
+# ============================================
+# SECTION 5C — INVITE TRACKER STORAGE
+# ============================================
+
+INVITE_FILE = "invites.json"
+
+def load_invite_data():
+    if not os.path.exists(INVITE_FILE):
+        with open(INVITE_FILE, "w") as f:
+            json.dump({}, f)
+    with open(INVITE_FILE, "r") as f:
+        return json.load(f)
+
+def save_invite_data(data):
+    with open(INVITE_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+invite_data = load_invite_data()
+# invite_data format: { "user_id": { "total": 0, "real": 0, "left": 0 } }
+
+# Cache των invites του guild
+invite_cache = {}  # code -> uses
 
 # ============================================
 # SECTION 6 — VOICE CHANNEL COUNTERS
@@ -401,7 +430,7 @@ class TicketCloseView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="Close Ticket", style=discord.ButtonStyle.red, custom_id="close_ticket_button")
+    @discord.ui.button(label="🔒 Close Ticket", style=discord.ButtonStyle.red, custom_id="close_ticket_button")
     async def close_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
         guild       = interaction.guild
         log_channel = guild.get_channel(TICKET_LOG_ID)
@@ -421,12 +450,12 @@ class TicketCloseView(discord.ui.View):
 class MainTicketSelect(discord.ui.Select):
     def __init__(self):
         options = [
-            discord.SelectOption(label="Owner",   emoji="👑"),
-            discord.SelectOption(label="Bug",     emoji="🐞"),
-            discord.SelectOption(label="Report",  emoji="📙"),
-            discord.SelectOption(label="Support", emoji="💬"),
+            discord.SelectOption(label="Owner",   description="Επικοινωνία με Owner", emoji="👑"),
+            discord.SelectOption(label="Bug",     description="Αναφορά bug",          emoji="🐞"),
+            discord.SelectOption(label="Report",  description="Αναφορά παίκτη",       emoji="📙"),
+            discord.SelectOption(label="Support", description="Γενική υποστήριξη",    emoji="💬"),
         ]
-        super().__init__(custom_id="main_ticket_select", placeholder="Διάλεξε κατηγορία ticket",
+        super().__init__(custom_id="main_ticket_select", placeholder="Make a selection",
                          min_values=1, max_values=1, options=options)
 
     async def callback(self, interaction: discord.Interaction):
@@ -461,10 +490,23 @@ class MainTicketSelect(discord.ui.Select):
                 overwrites[role] = discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
         channel = await guild.create_text_channel(name=name, category=category, overwrites=overwrites,
                                                   reason=f"Ticket created by {author} ({ticket_type})")
-        embed = discord.Embed(title=f"🎫 Ticket από {author.name}",
-                              description=f"{author.mention} άνοιξε **{ticket_type}**.\nΠαρακαλώ περιμένετε θα σας εξυπηρετήσουμε σύντομα.",
-                              color=discord.Color.from_rgb(120, 120, 120))
+
+        # Embed μέσα στο ticket channel με εικόνα server
+        embed = discord.Embed(
+            title=f"🎫 {ticket_type}",
+            description=(
+                f"Γεια σου {author.mention}!\n\n"
+                f"**Το staff θα σε εξυπηρετήσει σύντομα.**\n"
+                f"Παρακαλώ περίγραψε το αίτημά σου παρακάτω.\n\n"
+                f"*You can only have one active ticket at a time.*"
+            ),
+            color=discord.Color.from_rgb(20, 20, 40)
+        )
+        embed.set_image(url=SERVER_BANNER_URL)
+        embed.set_thumbnail(url=SERVER_THUMBNAIL_URL)
+        embed.set_footer(text="Atlas Roleplay • Support System")
         await channel.send(embed=embed, view=TicketCloseView())
+
         log_channel = guild.get_channel(TICKET_LOG_ID)
         if log_channel:
             log_embed = discord.Embed(title="📂 Νέο Ticket",
@@ -473,6 +515,7 @@ class MainTicketSelect(discord.ui.Select):
             log_embed.add_field(name="Τύπος",   value=ticket_type)
             log_embed.add_field(name="Channel", value=channel.mention)
             await log_channel.send(embed=log_embed)
+
         await interaction.response.send_message(f"Το ticket σου δημιουργήθηκε: {channel.mention}", ephemeral=True)
 
 class MainTicketPanel(discord.ui.View):
@@ -483,10 +526,10 @@ class MainTicketPanel(discord.ui.View):
 class JobTicketSelect(discord.ui.Select):
     def __init__(self):
         options = [
-            discord.SelectOption(label="Civilian Job", emoji="👮"),
-            discord.SelectOption(label="Criminal Job", emoji="🕵️"),
+            discord.SelectOption(label="Civilian Job", description="Αίτηση για civilian εργασία", emoji="👮"),
+            discord.SelectOption(label="Criminal Job", description="Αίτηση για criminal εργασία", emoji="🕵️"),
         ]
-        super().__init__(custom_id="job_ticket_select", placeholder="Διάλεξε job κατηγορία",
+        super().__init__(custom_id="job_ticket_select", placeholder="Make a selection",
                          min_values=1, max_values=1, options=options)
 
     async def callback(self, interaction: discord.Interaction):
@@ -513,18 +556,32 @@ class JobTicketSelect(discord.ui.Select):
                 overwrites[role] = discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
         channel = await guild.create_text_channel(name=name, category=category, overwrites=overwrites,
                                                   reason=f"Job ticket created by {author} ({ticket_type})")
-        embed = discord.Embed(title=f"🎫 Ticket από {author.name}",
-                              description=f"{author.mention} άνοιξε **{ticket_type}**.\nΠαρακαλώ περιμένετε να σας εξυπηρετήσει ένας Manager.",
-                              color=discord.Color.from_rgb(120, 120, 120))
+
+        # Embed μέσα στο job ticket channel με εικόνα server
+        embed = discord.Embed(
+            title=f"🎫 {ticket_type}",
+            description=(
+                f"Γεια σου {author.mention}!\n\n"
+                f"**Ένας Job Manager θα σε εξυπηρετήσει σύντομα.**\n"
+                f"Παρακαλώ περίγραψε την εργασία που σε ενδιαφέρει.\n\n"
+                f"*You can only have one active ticket at a time.*"
+            ),
+            color=discord.Color.from_rgb(20, 20, 40)
+        )
+        embed.set_image(url=SERVER_BANNER_URL)
+        embed.set_thumbnail(url=SERVER_THUMBNAIL_URL)
+        embed.set_footer(text="Atlas Roleplay • Job System")
         await channel.send(embed=embed, view=TicketCloseView())
+
         log_channel = guild.get_channel(TICKET_LOG_ID)
         if log_channel:
-            log_embed = discord.Embed(title="📂 Νέο Ticket",
-                                      description=f"Ο χρήστης {author.mention} άνοιξε ticket.",
+            log_embed = discord.Embed(title="📂 Νέο Job Ticket",
+                                      description=f"Ο χρήστης {author.mention} άνοιξε job ticket.",
                                       color=discord.Color.blue())
             log_embed.add_field(name="Τύπος",   value=ticket_type)
             log_embed.add_field(name="Channel", value=channel.mention)
             await log_channel.send(embed=log_embed)
+
         await interaction.response.send_message(f"Το job ticket σου δημιουργήθηκε: {channel.mention}", ephemeral=True)
 
 class JobTicketPanel(discord.ui.View):
@@ -756,10 +813,9 @@ class ApplicationPanelView(discord.ui.View):
 
     @discord.ui.button(label="Apply", style=discord.ButtonStyle.blurple, custom_id="open_app_placeholder")
     async def apply_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
-        guild  = interaction.guild
-        author = interaction.user
-
-        category_id = {
+        guild        = interaction.guild
+        author       = interaction.user
+        category_id  = {
             "whitelist": WHITELIST_CATEGORY_ID,
             "staff":     STAFF_CATEGORY_ID,
             "manager":   MANAGER_CATEGORY_ID,
@@ -798,7 +854,7 @@ class ApplicationPanelView(discord.ui.View):
             description=f"Καλώς ήρθες {author.mention}!\nΠάτα το κουμπί παρακάτω για να ξεκινήσεις.",
             color=discord.Color.blurple()
         )
-        embed.set_image(url="https://i.imgur.com/TQdHB7o.jpeg")
+        embed.set_image(url=SERVER_BANNER_URL)
 
         start_view = StartApplicationView(self.app_type)
         await channel.send(embed=embed, view=start_view)
@@ -916,9 +972,9 @@ async def update_duty_leaderboard(guild: discord.Guild):
 # SECTION 14 — SECURITY SYSTEM
 # ============================================
 
-spam_tracker    = {}
-URL_PATTERN     = re.compile(r"(https?://|www\.)\S+|discord\.gg/\S+", re.IGNORECASE)
-pending_bots    = {}
+spam_tracker     = {}
+URL_PATTERN      = re.compile(r"(https?://|www\.)\S+|discord\.gg/\S+", re.IGNORECASE)
+pending_bots     = {}
 ban_kick_tracker = {}
 
 class BotVerificationView(discord.ui.View):
@@ -965,6 +1021,17 @@ async def on_member_remove(member):
         if entry.target.id == member.id and (datetime.datetime.utcnow() - entry.created_at.replace(tzinfo=None)).seconds < 5:
             await _track_mass_action(member.guild, entry.user, "kick")
             break
+
+    # --- INVITE TRACKER: member left ---
+    uid = str(member.id)
+    if uid in invite_data and "invited_by" in invite_data[uid]:
+        inviter_id = invite_data[uid]["invited_by"]
+        if inviter_id in invite_data:
+            invite_data[inviter_id]["left"] = invite_data[inviter_id].get("left", 0) + 1
+            invite_data[inviter_id]["real"] = max(0,
+                invite_data[inviter_id].get("total", 0) - invite_data[inviter_id].get("left", 0)
+            )
+            save_invite_data(invite_data)
 
     await update_voice_channels(member.guild)
 
@@ -1075,13 +1142,14 @@ async def on_message(message: discord.Message):
         await bot.process_commands(message)
 
 # ============================================
-# SECTION 16 — ON MEMBER JOIN
+# SECTION 16 — ON MEMBER JOIN (INVITE TRACKER + AUTOROLE + LOG)
 # ============================================
 
 @bot.event
 async def on_member_join(member: discord.Member):
     guild = member.guild
 
+    # BOT VERIFICATION
     if member.bot:
         sec_log = bot.get_channel(SECURITY_LOG_CHANNEL_ID)
         if sec_log:
@@ -1097,6 +1165,7 @@ async def on_member_join(member: discord.Member):
             pending_bots[str(member.id)] = msg.id
         return
 
+    # AUTOROLE
     role = guild.get_role(AUTOROLE_ID)
     if role:
         try:
@@ -1104,6 +1173,70 @@ async def on_member_join(member: discord.Member):
         except:
             pass
 
+    # INVITE TRACKER
+    try:
+        new_invites = await guild.invites()
+        new_inv_map = {inv.code: inv.uses for inv in new_invites}
+        inviter     = None
+
+        for code, old_uses in invite_cache.get(guild.id, {}).items():
+            new_uses = new_inv_map.get(code, 0)
+            if new_uses > old_uses:
+                # Βρήκαμε ποιο invite χρησιμοποιήθηκε
+                for inv in new_invites:
+                    if inv.code == code:
+                        inviter = inv.inviter
+                        break
+                break
+
+        # Update cache
+        invite_cache[guild.id] = new_inv_map
+
+        if inviter:
+            inviter_id = str(inviter.id)
+            member_id  = str(member.id)
+
+            # Αποθήκευσε ποιος invited τον νέο member
+            if member_id not in invite_data:
+                invite_data[member_id] = {}
+            invite_data[member_id]["invited_by"] = inviter_id
+
+            # Αύξησε counters του inviter
+            if inviter_id not in invite_data:
+                invite_data[inviter_id] = {"total": 0, "real": 0, "left": 0}
+            invite_data[inviter_id]["total"] = invite_data[inviter_id].get("total", 0) + 1
+            invite_data[inviter_id]["real"]  = (
+                invite_data[inviter_id].get("total", 0) - invite_data[inviter_id].get("left", 0)
+            )
+            save_invite_data(invite_data)
+
+            # Log
+            inv_log = bot.get_channel(INVITE_LOG_CHANNEL_ID)
+            if inv_log:
+                embed = discord.Embed(
+                    title="📨 Νέο Invite",
+                    description=f"{member.mention} μπήκε με invite του {inviter.mention}",
+                    color=discord.Color.green(),
+                    timestamp=discord.utils.utcnow()
+                )
+                embed.add_field(name="📊 Στατιστικά Inviter",
+                                value=(
+                                    f"**Όνομα:** {inviter.display_name}\n"
+                                    f"**Συνολικά invites:** {invite_data[inviter_id].get('total', 0)}\n"
+                                    f"**Real (ενεργά):** {invite_data[inviter_id].get('real', 0)}\n"
+                                    f"**Έφυγαν:** {invite_data[inviter_id].get('left', 0)}"
+                                ),
+                                inline=False)
+                embed.set_thumbnail(url=member.avatar)
+                await inv_log.send(embed=embed)
+        else:
+            # Δεν βρέθηκε inviter, απλά update cache
+            invite_cache[guild.id] = new_inv_map
+
+    except Exception as e:
+        print(f"Invite tracker error: {e}")
+
+    # JOIN LOG
     log = bot.get_channel(MEMBER_JOIN_LOG_CHANNEL_ID)
     if log:
         embed = discord.Embed(title="🟢 Member Joined",
@@ -1201,6 +1334,22 @@ async def dmall(ctx, *, message: str):
     await ctx.reply(f"📨 Το μήνυμα στάλθηκε σε **{sent}** μέλη.")
 
 @bot.command()
+async def invites(ctx, member: discord.Member = None):
+    """Εμφανίζει τα invites ενός χρήστη"""
+    target = member or ctx.author
+    uid    = str(target.id)
+    data   = invite_data.get(uid, {"total": 0, "real": 0, "left": 0})
+    embed  = discord.Embed(
+        title=f"📨 Invites — {target.display_name}",
+        color=discord.Color.blurple()
+    )
+    embed.add_field(name="📊 Συνολικά",    value=str(data.get("total", 0)), inline=True)
+    embed.add_field(name="✅ Real",         value=str(data.get("real",  0)), inline=True)
+    embed.add_field(name="🚪 Έφυγαν",      value=str(data.get("left",  0)), inline=True)
+    embed.set_thumbnail(url=target.avatar)
+    await ctx.reply(embed=embed)
+
+@bot.command()
 async def serverstatus(ctx):
     guild   = ctx.guild
     members = sum(1 for m in guild.members if not m.bot)
@@ -1222,10 +1371,10 @@ async def panel(ctx):
                           description="Όλες οι βασικές εντολές του bot.",
                           color=discord.Color.dark_gray())
     embed.add_field(name="🛠 Moderation",   value="`!ban`, `!kick`, `!timeout`, `!clearmessage`", inline=False)
-    embed.add_field(name="📊 Info",         value="`!serverstatus`", inline=False)
-    embed.add_field(name="🧰 Utility",      value="`!say`, `!dmall`", inline=False)
+    embed.add_field(name="📊 Info",         value="`!serverstatus`, `!invites [@user]`",           inline=False)
+    embed.add_field(name="🧰 Utility",      value="`!say`, `!dmall`",                              inline=False)
     embed.add_field(name="📋 Applications", value="`!whitelistpanel`, `!staffpanel`, `!managerpanel`", inline=False)
-    embed.add_field(name="🟢 Duty",         value="`!dutypanel`, `!dutyleaderboard`", inline=False)
+    embed.add_field(name="🟢 Duty",         value="`!dutypanel`, `!dutyleaderboard`",              inline=False)
     await ctx.reply(embed=embed)
 
 # ============================================
@@ -1236,10 +1385,17 @@ async def panel(ctx):
 async def ticketpanel(ctx):
     if not is_owner_or_coowner(ctx.author):
         return await ctx.reply("Δεν έχεις δικαίωμα.")
-    embed = discord.Embed(title="Atlas Roleplay — Support Panel",
-                          description="**Επίλεξε την κατηγορία που ταιριάζει στο αίτημά σου.**\nΤο προσωπικό θα σε εξυπηρετήσει άμεσα.",
-                          color=discord.Color.from_rgb(20, 20, 25))
-    embed.set_image(url="https://i.imgur.com/TQdHB7o.jpeg")
+    embed = discord.Embed(
+        title="Atlas Roleplay — Support Panel",
+        description=(
+            "**Open a ticket to contact the appropriate staff member.**\n"
+            "Our staff are here to help with anything you need!\n\n"
+            "*You can only have one active ticket at a time.*"
+        ),
+        color=discord.Color.from_rgb(20, 20, 40)
+    )
+    embed.set_image(url=SERVER_BANNER_URL)
+    embed.set_thumbnail(url=SERVER_THUMBNAIL_URL)
     embed.set_footer(text="Atlas Roleplay • Support System")
     await ctx.send(embed=embed, view=MainTicketPanel())
     await ctx.reply("Το νέο ticket panel στάλθηκε.", delete_after=2)
@@ -1248,11 +1404,18 @@ async def ticketpanel(ctx):
 async def jobpanel(ctx):
     if not is_owner_or_coowner(ctx.author):
         return await ctx.reply("Δεν έχεις δικαίωμα.")
-    embed = discord.Embed(title="Atlas Roleplay — Job Panel",
-                          description="**Επίλεξε την κατηγορία job ticket που χρειάζεσαι.**\nΗ ομάδα μας θα σε εξυπηρετήσει άμεσα.",
-                          color=discord.Color.from_rgb(20, 20, 25))
-    embed.set_image(url="https://i.imgur.com/TQdHB7o.jpeg")
-    embed.set_footer(text="Atlas Roleplay • Job Support")
+    embed = discord.Embed(
+        title="Atlas Roleplay — Job Panel",
+        description=(
+            "**Επίλεξε την κατηγορία job ticket που χρειάζεσαι.**\n"
+            "Η ομάδα μας θα σε εξυπηρετήσει άμεσα!\n\n"
+            "*You can only have one active ticket at a time.*"
+        ),
+        color=discord.Color.from_rgb(20, 20, 40)
+    )
+    embed.set_image(url=SERVER_BANNER_URL)
+    embed.set_thumbnail(url=SERVER_THUMBNAIL_URL)
+    embed.set_footer(text="Atlas Roleplay • Job System")
     await ctx.send(embed=embed, view=JobTicketPanel())
     await ctx.reply("Το νέο job ticket panel στάλθηκε.", delete_after=2)
 
@@ -1265,7 +1428,7 @@ async def whitelistpanel(ctx):
         description="Κάνε αίτηση για να μπεις στον server!\nΠάτα το κουμπί παρακάτω.",
         color=discord.Color.blurple()
     )
-    embed.set_image(url="https://i.imgur.com/TQdHB7o.jpeg")
+    embed.set_image(url=SERVER_BANNER_URL)
     await ctx.send(embed=embed, view=ApplicationPanelView("whitelist"))
     await ctx.reply("Whitelist panel στάλθηκε.", delete_after=2)
 
@@ -1278,7 +1441,7 @@ async def staffpanel(ctx):
         description="Κάνε αίτηση για Staff!\nΠάτα το κουμπί παρακάτω.",
         color=discord.Color.green()
     )
-    embed.set_image(url="https://i.imgur.com/TQdHB7o.jpeg")
+    embed.set_image(url=SERVER_BANNER_URL)
     await ctx.send(embed=embed, view=ApplicationPanelView("staff"))
     await ctx.reply("Staff panel στάλθηκε.", delete_after=2)
 
@@ -1291,7 +1454,7 @@ async def managerpanel(ctx):
         description="Κάνε αίτηση για Manager!\nΠάτα το κουμπί παρακάτω.",
         color=discord.Color.gold()
     )
-    embed.set_image(url="https://i.imgur.com/TQdHB7o.jpeg")
+    embed.set_image(url=SERVER_BANNER_URL)
     await ctx.send(embed=embed, view=ApplicationPanelView("manager"))
     await ctx.reply("Manager panel στάλθηκε.", delete_after=2)
 
@@ -1329,9 +1492,16 @@ async def on_ready():
     bot.add_view(ApplicationPanelView("staff"))
     bot.add_view(ApplicationPanelView("manager"))
 
+    # Load invite cache
     guild = bot.get_guild(GUILD_ID)
     if guild:
         await update_voice_channels(guild)
+        try:
+            invs = await guild.invites()
+            invite_cache[guild.id] = {inv.code: inv.uses for inv in invs}
+            print(f"Loaded {len(invs)} invites into cache.")
+        except Exception as e:
+            print(f"Could not load invites: {e}")
 
     await bot.change_presence(activity=discord.Game(name="Atlas Roleplay"))
     print("Bot is fully online and ready.")
