@@ -82,12 +82,18 @@ DUTY_LEADERBOARD_CHANNEL_ID  = 1490341549719162971
 
 SECURITY_LOG_CHANNEL_ID      = 1490340271156756490
 
+# ============ SUGGESTION SYSTEM ============
+SUGGESTION_CHANNEL_ID        = 1490134636691591168  # <-- βάλε το ID του καναλιού για suggestions
+
+# ============ REVIEW SYSTEM ============
+REVIEW_CHANNEL_ID            = 1490702704782217381 # <-- βάλε το ID του καναλιού για reviews
+
 # ============ INVITE TRACKER ============
-INVITE_LOG_CHANNEL_ID = 1490493231107145820  # <-- βάλε το ID του καναλιού για invite logs
+INVITE_LOG_CHANNEL_ID = 1490493231107145820
 
 # ============ PANEL IMAGES ============
-SERVER_BANNER_URL    = "https://i.imgur.com/TQdHB7o.jpeg"  # <-- μεγάλη εικόνα server
-SERVER_THUMBNAIL_URL = "https://i.imgur.com/tn7Q8sf.png"  # <-- μικρό thumbnail
+SERVER_BANNER_URL    = "https://i.imgur.com/TQdHB7o.jpeg"
+SERVER_THUMBNAIL_URL = "https://i.imgur.com/tn7Q8sf.png"
 
 # ROLES ΠΟΥ ΜΠΟΡΟΥΝ ΝΑ ΚΑΝΟΥΝ ACCEPT/DENY
 APPLICATION_MANAGER_ROLES = [FOUNDER_ROLE_ID, OWNER_ID, CO_OWNER_ID, WHITELIST_MANAGER_ROLE_ID, APPLICATION_MANAGER_ID]
@@ -95,7 +101,7 @@ APPLICATION_MANAGER_ROLES = [FOUNDER_ROLE_ID, OWNER_ID, CO_OWNER_ID, WHITELIST_M
 # ============ ΕΡΩΤΗΣΕΙΣ ============
 WHITELIST_QUESTIONS = [
     "Ποιο είναι το όνομα και η ηλικία σου (IRL);",
-    "Δώσε μια σύντομη περιγραφή του χαρακτήρα σου (προσωπικότητα, background, στόχοι).",
+    "Δώσε μια σύντομη περιγραφή του χαρακτήρα σου (προσωπικότητα, background, στόλοι).",
     "Ποιο είναι το επάγγελμα ή η κύρια δραστηριότητα που θέλεις να ακολουθήσει ο χαρακτήρας σου;",
     "Τι είναι το Powergaming; Δώσε παράδειγμα.",
     "Τι είναι το Metagaming; Δώσε παράδειγμα.",
@@ -226,10 +232,7 @@ def save_invite_data(data):
         json.dump(data, f, indent=4)
 
 invite_data = load_invite_data()
-# invite_data format: { "user_id": { "total": 0, "real": 0, "left": 0 } }
-
-# Cache των invites του guild
-invite_cache = {}  # code -> uses
+invite_cache = {}
 
 # ============================================
 # SECTION 6 — VOICE CHANNEL COUNTERS
@@ -491,7 +494,6 @@ class MainTicketSelect(discord.ui.Select):
         channel = await guild.create_text_channel(name=name, category=category, overwrites=overwrites,
                                                   reason=f"Ticket created by {author} ({ticket_type})")
 
-        # Embed μέσα στο ticket channel με εικόνα server
         embed = discord.Embed(
             title=f"🎫 {ticket_type}",
             description=(
@@ -557,7 +559,6 @@ class JobTicketSelect(discord.ui.Select):
         channel = await guild.create_text_channel(name=name, category=category, overwrites=overwrites,
                                                   reason=f"Job ticket created by {author} ({ticket_type})")
 
-        # Embed μέσα στο job ticket channel με εικόνα server
         embed = discord.Embed(
             title=f"🎫 {ticket_type}",
             description=(
@@ -590,7 +591,7 @@ class JobTicketPanel(discord.ui.View):
         self.add_item(JobTicketSelect())
 
 # ============================================
-# SECTION 12 — APPLICATION SYSTEM (WHITELIST / STAFF / MANAGER)
+# SECTION 12 — APPLICATION SYSTEM (UNIFIED DROPDOWN PANEL)
 # ============================================
 
 active_application_sessions = {}
@@ -799,30 +800,51 @@ async def handle_application_message(message: discord.Message):
 
     return True
 
-class ApplicationPanelView(discord.ui.View):
-    def __init__(self, app_type: str):
-        super().__init__(timeout=None)
-        self.app_type = app_type
-        label_map = {
-            "whitelist": "📋 Whitelist",
-            "staff":     "👮 Staff Application",
-            "manager":   "👔 Manager Application",
-        }
-        self.apply_btn.label     = label_map.get(app_type, "Apply")
-        self.apply_btn.custom_id = f"open_app_{app_type}"
+# ---- UNIFIED APPLICATION DROPDOWN (ένα panel για Whitelist / Staff / Manager) ----
 
-    @discord.ui.button(label="Apply", style=discord.ButtonStyle.blurple, custom_id="open_app_placeholder")
-    async def apply_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
-        guild        = interaction.guild
-        author       = interaction.user
-        category_id  = {
+class ApplicationSelect(discord.ui.Select):
+    def __init__(self):
+        options = [
+            discord.SelectOption(
+                label="📋 Whitelist",
+                description="Κάνε αίτηση για να παίξεις στον server",
+                emoji="📋",
+                value="whitelist"
+            ),
+            discord.SelectOption(
+                label="👮 Staff Application",
+                description="Κάνε αίτηση για Staff",
+                emoji="👮",
+                value="staff"
+            ),
+            discord.SelectOption(
+                label="👔 Manager Application",
+                description="Κάνε αίτηση για Manager",
+                emoji="👔",
+                value="manager"
+            ),
+        ]
+        super().__init__(
+            custom_id="unified_application_select",
+            placeholder="📂 Επίλεξε τύπο αίτησης...",
+            min_values=1,
+            max_values=1,
+            options=options
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        app_type = self.values[0]
+        guild    = interaction.guild
+        author   = interaction.user
+
+        category_id = {
             "whitelist": WHITELIST_CATEGORY_ID,
             "staff":     STAFF_CATEGORY_ID,
             "manager":   MANAGER_CATEGORY_ID,
-        }.get(self.app_type)
+        }.get(app_type)
 
         category     = guild.get_channel(category_id)
-        channel_name = f"{self.app_type}-{author.name}".replace(" ", "-").lower()
+        channel_name = f"{app_type}-{author.name}".replace(" ", "-").lower()
 
         existing = discord.utils.get(guild.text_channels, name=channel_name)
         if existing:
@@ -848,17 +870,29 @@ class ApplicationPanelView(discord.ui.View):
             "staff":     "👮 Staff Application",
             "manager":   "👔 Manager Application",
         }
+        desc_map = {
+            "whitelist": "Καλώς ήρθες! Κάνε αίτηση για whitelist και ξεκίνα το roleplay σου.",
+            "staff":     "Καλώς ήρθες! Κάνε αίτηση για Staff και βοήθησε την κοινότητα.",
+            "manager":   "Καλώς ήρθες! Κάνε αίτηση για Manager και ανέλαβε ευθύνες στον server.",
+        }
 
         embed = discord.Embed(
-            title=title_map.get(self.app_type, "Application"),
-            description=f"Καλώς ήρθες {author.mention}!\nΠάτα το κουμπί παρακάτω για να ξεκινήσεις.",
+            title=title_map.get(app_type, "Application"),
+            description=f"{author.mention}, {desc_map.get(app_type, '')}\n\nΠάτα το κουμπί παρακάτω για να ξεκινήσεις.",
             color=discord.Color.blurple()
         )
         embed.set_image(url=SERVER_BANNER_URL)
+        embed.set_thumbnail(url=SERVER_THUMBNAIL_URL)
+        embed.set_footer(text="Atlas Roleplay • Applications")
 
-        start_view = StartApplicationView(self.app_type)
+        start_view = StartApplicationView(app_type)
         await channel.send(embed=embed, view=start_view)
         await interaction.response.send_message(f"Το κανάλι σου δημιουργήθηκε: {channel.mention}", ephemeral=True)
+
+class UnifiedApplicationPanel(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.add_item(ApplicationSelect())
 
 # ============================================
 # SECTION 13 — DUTY SYSTEM
@@ -989,8 +1023,6 @@ class BotVerificationView(discord.ui.View):
         if not interaction.user.guild_permissions.administrator:
             return await interaction.response.send_message("❌ Μόνο admins.", ephemeral=True)
         pending_bots.pop(str(self.bot_member.id), None)
-
-        # Αφαίρεσε τα channel-specific overwrites ώστε να ισχύουν τα default permissions
         try:
             for channel in interaction.guild.channels:
                 try:
@@ -1000,7 +1032,6 @@ class BotVerificationView(discord.ui.View):
                     pass
         except:
             pass
-
         await interaction.message.edit(
             content=f"✅ Bot **{self.bot_member}** έγινε **accepted** από {interaction.user.mention}.",
             view=None
@@ -1034,7 +1065,6 @@ async def on_member_remove(member):
             await _track_mass_action(member.guild, entry.user, "kick")
             break
 
-    # --- INVITE TRACKER: member left ---
     uid = str(member.id)
     if uid in invite_data and "invited_by" in invite_data[uid]:
         inviter_id = invite_data[uid]["invited_by"]
@@ -1090,7 +1120,140 @@ async def _track_mass_action(guild: discord.Guild, moderator, action_type: str):
                 await sec_log.send(embed=embed)
 
 # ============================================
-# SECTION 15 — ON_MESSAGE (SECURITY + APPLICATIONS)
+# SECTION 15 — SUGGESTION SYSTEM
+# ============================================
+
+class SuggestionModal(discord.ui.Modal, title="💡 Make a Suggestion"):
+    suggestion_input = discord.ui.TextInput(
+        label="Η πρότασή σου",
+        style=discord.TextStyle.paragraph,
+        placeholder="Γράψε εδώ την πρότασή σου...",
+        required=True,
+        max_length=1000
+    )
+
+    async def on_submit(self, interaction: discord.Interaction):
+        channel = interaction.guild.get_channel(SUGGESTION_CHANNEL_ID)
+        if not channel:
+            return await interaction.response.send_message("❌ Το κανάλι suggestions δεν βρέθηκε.", ephemeral=True)
+
+        embed = discord.Embed(
+            title="💡 Νέα Πρόταση",
+            description=self.suggestion_input.value,
+            color=discord.Color.from_rgb(88, 101, 242),
+            timestamp=discord.utils.utcnow()
+        )
+        embed.set_author(
+            name=interaction.user.display_name,
+            icon_url=interaction.user.avatar.url if interaction.user.avatar else None
+        )
+        embed.set_thumbnail(url=SERVER_THUMBNAIL_URL)
+        embed.set_footer(text=f"User ID: {interaction.user.id} • Atlas Roleplay")
+
+        msg = await channel.send(embed=embed)
+        await msg.add_reaction("👍")
+        await msg.add_reaction("👎")
+
+        await interaction.response.send_message("✅ Η πρότασή σου στάλθηκε!", ephemeral=True)
+
+class SuggestionPanelView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="💡 Make a Suggestion", style=discord.ButtonStyle.blurple, custom_id="make_suggestion_btn")
+    async def make_suggestion(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(SuggestionModal())
+
+# ============================================
+# SECTION 16 — REVIEW SYSTEM
+# ============================================
+
+class ReviewModal(discord.ui.Modal, title="⭐ Make a Review"):
+    review_input = discord.ui.TextInput(
+        label="Το review σου",
+        style=discord.TextStyle.paragraph,
+        placeholder="Γράψε εδώ το review σου για τον server...",
+        required=True,
+        max_length=1000
+    )
+
+    def __init__(self, stars: int):
+        super().__init__()
+        self.stars = stars
+
+    async def on_submit(self, interaction: discord.Interaction):
+        channel = interaction.guild.get_channel(REVIEW_CHANNEL_ID)
+        if not channel:
+            return await interaction.response.send_message("❌ Το κανάλι reviews δεν βρέθηκε.", ephemeral=True)
+
+        star_display = "⭐" * self.stars + "☆" * (5 - self.stars)
+
+        color_map = {
+            1: discord.Color.red(),
+            2: discord.Color.orange(),
+            3: discord.Color.yellow(),
+            4: discord.Color.green(),
+            5: discord.Color.from_rgb(255, 215, 0),
+        }
+
+        embed = discord.Embed(
+            title="⭐ Νέο Review",
+            color=color_map.get(self.stars, discord.Color.blurple()),
+            timestamp=discord.utils.utcnow()
+        )
+        embed.add_field(name="Αξιολόγηση", value=star_display, inline=False)
+        embed.add_field(name="Σχόλιο", value=self.review_input.value, inline=False)
+        embed.set_author(
+            name=interaction.user.display_name,
+            icon_url=interaction.user.avatar.url if interaction.user.avatar else None
+        )
+        embed.set_thumbnail(url=SERVER_THUMBNAIL_URL)
+        embed.set_footer(text=f"User ID: {interaction.user.id} • Atlas Roleplay")
+
+        await channel.send(embed=embed)
+        await interaction.response.send_message(f"✅ Το review σου ({star_display}) στάλθηκε! Ευχαριστούμε!", ephemeral=True)
+
+class StarSelectView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.add_item(StarSelect())
+
+class StarSelect(discord.ui.Select):
+    def __init__(self):
+        options = [
+            discord.SelectOption(label="⭐ 1 Αστέρι",     description="Πολύ κακό",  emoji="⭐", value="1"),
+            discord.SelectOption(label="⭐⭐ 2 Αστέρια",   description="Κακό",       emoji="⭐", value="2"),
+            discord.SelectOption(label="⭐⭐⭐ 3 Αστέρια", description="Μέτριο",     emoji="⭐", value="3"),
+            discord.SelectOption(label="⭐⭐⭐⭐ 4 Αστέρια", description="Καλό",    emoji="⭐", value="4"),
+            discord.SelectOption(label="⭐⭐⭐⭐⭐ 5 Αστέρια", description="Άριστο!", emoji="⭐", value="5"),
+        ]
+        super().__init__(
+            custom_id="star_select_review",
+            placeholder="⭐ Επίλεξε αξιολόγηση...",
+            min_values=1,
+            max_values=1,
+            options=options
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        stars = int(self.values[0])
+        await interaction.response.send_modal(ReviewModal(stars))
+
+class ReviewPanelView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="⭐ Make a Review", style=discord.ButtonStyle.blurple, custom_id="make_review_btn")
+    async def make_review(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = discord.Embed(
+            title="⭐ Επίλεξε Αξιολόγηση",
+            description="Επίλεξε πόσα αστέρια θέλεις να δώσεις και μετά γράψε το σχόλιό σου!",
+            color=discord.Color.from_rgb(255, 215, 0)
+        )
+        await interaction.response.send_message(embed=embed, view=StarSelectView(), ephemeral=True)
+
+# ============================================
+# SECTION 17 — ON_MESSAGE (SECURITY + APPLICATIONS)
 # ============================================
 
 @bot.event
@@ -1159,7 +1322,7 @@ async def on_message(message: discord.Message):
         await bot.process_commands(message)
 
 # ============================================
-# SECTION 16 — ON MEMBER JOIN (INVITE TRACKER + AUTOROLE + LOG)
+# SECTION 18 — ON MEMBER JOIN (INVITE TRACKER + AUTOROLE + LOG)
 # ============================================
 
 @bot.event
@@ -1168,12 +1331,10 @@ async def on_member_join(member: discord.Member):
 
     # BOT VERIFICATION
     if member.bot:
-        # Αφαίρεσε ΟΛΑ τα permissions από το bot μέχρι να γίνει accept
         try:
-            # Βάλε το bot σε όλα τα channels με view_channel=False
             for channel in member.guild.channels:
                 try:
-                    await channel.set_permissions(member, 
+                    await channel.set_permissions(member,
                         send_messages=False,
                         read_messages=False,
                         connect=False,
@@ -1216,26 +1377,22 @@ async def on_member_join(member: discord.Member):
         for code, old_uses in invite_cache.get(guild.id, {}).items():
             new_uses = new_inv_map.get(code, 0)
             if new_uses > old_uses:
-                # Βρήκαμε ποιο invite χρησιμοποιήθηκε
                 for inv in new_invites:
                     if inv.code == code:
                         inviter = inv.inviter
                         break
                 break
 
-        # Update cache
         invite_cache[guild.id] = new_inv_map
 
         if inviter:
             inviter_id = str(inviter.id)
             member_id  = str(member.id)
 
-            # Αποθήκευσε ποιος invited τον νέο member
             if member_id not in invite_data:
                 invite_data[member_id] = {}
             invite_data[member_id]["invited_by"] = inviter_id
 
-            # Αύξησε counters του inviter
             if inviter_id not in invite_data:
                 invite_data[inviter_id] = {"total": 0, "real": 0, "left": 0}
             invite_data[inviter_id]["total"] = invite_data[inviter_id].get("total", 0) + 1
@@ -1244,7 +1401,6 @@ async def on_member_join(member: discord.Member):
             )
             save_invite_data(invite_data)
 
-            # Log
             inv_log = bot.get_channel(INVITE_LOG_CHANNEL_ID)
             if inv_log:
                 embed = discord.Embed(
@@ -1264,7 +1420,6 @@ async def on_member_join(member: discord.Member):
                 embed.set_thumbnail(url=member.avatar)
                 await inv_log.send(embed=embed)
         else:
-            # Δεν βρέθηκε inviter, απλά update cache
             invite_cache[guild.id] = new_inv_map
 
     except Exception as e:
@@ -1283,7 +1438,7 @@ async def on_member_join(member: discord.Member):
     await update_voice_channels(guild)
 
 # ============================================
-# SECTION 17 — MODERATION COMMANDS
+# SECTION 19 — MODERATION COMMANDS
 # ============================================
 
 def has_staff_permissions(member: discord.Member):
@@ -1342,7 +1497,7 @@ async def clearmessage(ctx, amount: int = None):
         await log.send(f"🧹 **{ctx.author}** cleared **{amount}** messages in {ctx.channel.mention}")
 
 # ============================================
-# SECTION 18 — UTILITY COMMANDS
+# SECTION 20 — UTILITY COMMANDS
 # ============================================
 
 @bot.command()
@@ -1369,7 +1524,6 @@ async def dmall(ctx, *, message: str):
 
 @bot.command()
 async def invites(ctx, member: discord.Member = None):
-    """Εμφανίζει τα invites ενός χρήστη"""
     target = member or ctx.author
     uid    = str(target.id)
     data   = invite_data.get(uid, {"total": 0, "real": 0, "left": 0})
@@ -1377,9 +1531,9 @@ async def invites(ctx, member: discord.Member = None):
         title=f"📨 Invites — {target.display_name}",
         color=discord.Color.blurple()
     )
-    embed.add_field(name="📊 Συνολικά",    value=str(data.get("total", 0)), inline=True)
-    embed.add_field(name="✅ Real",         value=str(data.get("real",  0)), inline=True)
-    embed.add_field(name="🚪 Έφυγαν",      value=str(data.get("left",  0)), inline=True)
+    embed.add_field(name="📊 Συνολικά", value=str(data.get("total", 0)), inline=True)
+    embed.add_field(name="✅ Real",     value=str(data.get("real",  0)), inline=True)
+    embed.add_field(name="🚪 Έφυγαν",  value=str(data.get("left",  0)), inline=True)
     embed.set_thumbnail(url=target.avatar)
     await ctx.reply(embed=embed)
 
@@ -1404,15 +1558,17 @@ async def panel(ctx):
     embed = discord.Embed(title="📌 Atlas Roleplay — Command Panel",
                           description="Όλες οι βασικές εντολές του bot.",
                           color=discord.Color.dark_gray())
-    embed.add_field(name="🛠 Moderation",   value="`!ban`, `!kick`, `!timeout`, `!clearmessage`", inline=False)
-    embed.add_field(name="📊 Info",         value="`!serverstatus`, `!invites [@user]`",           inline=False)
-    embed.add_field(name="🧰 Utility",      value="`!say`, `!dmall`",                              inline=False)
-    embed.add_field(name="📋 Applications", value="`!whitelistpanel`, `!staffpanel`, `!managerpanel`", inline=False)
-    embed.add_field(name="🟢 Duty",         value="`!dutypanel`, `!dutyleaderboard`",              inline=False)
+    embed.add_field(name="🛠 Moderation",   value="`!ban`, `!kick`, `!timeout`, `!clearmessage`",           inline=False)
+    embed.add_field(name="📊 Info",         value="`!serverstatus`, `!invites [@user]`",                     inline=False)
+    embed.add_field(name="🧰 Utility",      value="`!say`, `!dmall`",                                        inline=False)
+    embed.add_field(name="📋 Applications", value="`!applicationpanel` (Whitelist/Staff/Manager dropdown)",   inline=False)
+    embed.add_field(name="🟢 Duty",         value="`!dutypanel`, `!dutyleaderboard`",                        inline=False)
+    embed.add_field(name="💡 Suggestions",  value="`!suggestionpanel`",                                      inline=False)
+    embed.add_field(name="⭐ Reviews",      value="`!reviewpanel`",                                          inline=False)
     await ctx.reply(embed=embed)
 
 # ============================================
-# SECTION 19 — PANEL COMMANDS
+# SECTION 21 — PANEL COMMANDS
 # ============================================
 
 @bot.command()
@@ -1454,43 +1610,45 @@ async def jobpanel(ctx):
     await ctx.reply("Το νέο job ticket panel στάλθηκε.", delete_after=2)
 
 @bot.command()
-async def whitelistpanel(ctx):
+async def applicationpanel(ctx):
+    """Unified panel για Whitelist / Staff / Manager (dropdown)"""
     if not is_owner_or_coowner(ctx.author):
         return await ctx.reply("Δεν έχεις δικαίωμα.")
     embed = discord.Embed(
-        title="📋 Whitelist — Atlas Roleplay",
-        description="Κάνε αίτηση για να μπεις στον server!\nΠάτα το κουμπί παρακάτω.",
-        color=discord.Color.blurple()
+        title="📋 Atlas Roleplay — Applications",
+        description=(
+            "**Επίλεξε τον τύπο αίτησης που θέλεις να κάνεις από το μενού παρακάτω.**\n\n"
+            "📋 **Whitelist** — Για να μπεις στον server\n"
+            "👮 **Staff** — Για να γίνεις μέλος της ομάδας staff\n"
+            "👔 **Manager** — Για να γίνεις Manager\n\n"
+            "*Μπορείς να έχεις μόνο μία ενεργή αίτηση κάθε φορά.*"
+        ),
+        color=discord.Color.from_rgb(20, 20, 40)
     )
     embed.set_image(url=SERVER_BANNER_URL)
-    await ctx.send(embed=embed, view=ApplicationPanelView("whitelist"))
-    await ctx.reply("Whitelist panel στάλθηκε.", delete_after=2)
+    embed.set_thumbnail(url=SERVER_THUMBNAIL_URL)
+    embed.set_footer(text="Atlas Roleplay • Applications System")
+    await ctx.send(embed=embed, view=UnifiedApplicationPanel())
+    await ctx.reply("Application panel στάλθηκε.", delete_after=2)
+
+# Παλιές εντολές για συμβατότητα (redirect στο unified panel)
+@bot.command()
+async def whitelistpanel(ctx):
+    if not is_owner_or_coowner(ctx.author):
+        return await ctx.reply("Δεν έχεις δικαίωμα.")
+    await ctx.reply("ℹ️ Χρησιμοποίησε `!applicationpanel` για το νέο unified panel με dropdown!", delete_after=5)
 
 @bot.command()
 async def staffpanel(ctx):
     if not is_owner_or_coowner(ctx.author):
         return await ctx.reply("Δεν έχεις δικαίωμα.")
-    embed = discord.Embed(
-        title="👮 Staff Application — Atlas Roleplay",
-        description="Κάνε αίτηση για Staff!\nΠάτα το κουμπί παρακάτω.",
-        color=discord.Color.green()
-    )
-    embed.set_image(url=SERVER_BANNER_URL)
-    await ctx.send(embed=embed, view=ApplicationPanelView("staff"))
-    await ctx.reply("Staff panel στάλθηκε.", delete_after=2)
+    await ctx.reply("ℹ️ Χρησιμοποίησε `!applicationpanel` για το νέο unified panel με dropdown!", delete_after=5)
 
 @bot.command()
 async def managerpanel(ctx):
     if not is_owner_or_coowner(ctx.author):
         return await ctx.reply("Δεν έχεις δικαίωμα.")
-    embed = discord.Embed(
-        title="👔 Manager Application — Atlas Roleplay",
-        description="Κάνε αίτηση για Manager!\nΠάτα το κουμπί παρακάτω.",
-        color=discord.Color.gold()
-    )
-    embed.set_image(url=SERVER_BANNER_URL)
-    await ctx.send(embed=embed, view=ApplicationPanelView("manager"))
-    await ctx.reply("Manager panel στάλθηκε.", delete_after=2)
+    await ctx.reply("ℹ️ Χρησιμοποίησε `!applicationpanel` για το νέο unified panel με dropdown!", delete_after=5)
 
 @bot.command()
 async def dutypanel(ctx):
@@ -1510,8 +1668,55 @@ async def dutyleaderboard(ctx):
     await update_duty_leaderboard(guild)
     await ctx.reply("✅ Leaderboard ανανεώθηκε.", delete_after=3)
 
+@bot.command()
+async def suggestionpanel(ctx):
+    """Panel με κουμπί για να κάνεις suggestion"""
+    if not is_owner_or_coowner(ctx.author):
+        return await ctx.reply("Δεν έχεις δικαίωμα.")
+    embed = discord.Embed(
+        title="💡 Atlas Roleplay — Suggestions",
+        description=(
+            "**Έχεις κάποια ιδέα ή πρόταση για τον server;**\n\n"
+            "Πάτα το κουμπί παρακάτω, γράψε την πρότασή σου και στείλε τη!\n"
+            "Η κοινότητα θα μπορεί να ψηφίσει με 👍 ή 👎.\n\n"
+            "*Κάθε πρόταση εξετάζεται από την ομάδα διαχείρισης.*"
+        ),
+        color=discord.Color.from_rgb(88, 101, 242)
+    )
+    embed.set_image(url=SERVER_BANNER_URL)
+    embed.set_thumbnail(url=SERVER_THUMBNAIL_URL)
+    embed.set_footer(text="Atlas Roleplay • Suggestion System")
+    await ctx.send(embed=embed, view=SuggestionPanelView())
+    await ctx.reply("Suggestion panel στάλθηκε.", delete_after=2)
+
+@bot.command()
+async def reviewpanel(ctx):
+    """Panel με κουμπί για να κάνεις review με αστέρια"""
+    if not is_owner_or_coowner(ctx.author):
+        return await ctx.reply("Δεν έχεις δικαίωμα.")
+    embed = discord.Embed(
+        title="⭐ Atlas Roleplay — Reviews",
+        description=(
+            "**Πώς σου φαίνεται ο server μας;**\n\n"
+            "Πάτα το κουμπί παρακάτω, επίλεξε την αξιολόγησή σου (1-5 αστέρια)\n"
+            "και γράψε το σχόλιό σου!\n\n"
+            "⭐ — Πολύ κακό\n"
+            "⭐⭐ — Κακό\n"
+            "⭐⭐⭐ — Μέτριο\n"
+            "⭐⭐⭐⭐ — Καλό\n"
+            "⭐⭐⭐⭐⭐ — Άριστο!\n\n"
+            "*Ευχαριστούμε για το feedback σου!*"
+        ),
+        color=discord.Color.from_rgb(255, 215, 0)
+    )
+    embed.set_image(url=SERVER_BANNER_URL)
+    embed.set_thumbnail(url=SERVER_THUMBNAIL_URL)
+    embed.set_footer(text="Atlas Roleplay • Review System")
+    await ctx.send(embed=embed, view=ReviewPanelView())
+    await ctx.reply("Review panel στάλθηκε.", delete_after=2)
+
 # ============================================
-# SECTION 20 — ON_READY
+# SECTION 22 — ON_READY
 # ============================================
 
 @bot.event
@@ -1522,11 +1727,11 @@ async def on_ready():
     bot.add_view(JobTicketPanel())
     bot.add_view(TicketCloseView())
     bot.add_view(DutyView())
-    bot.add_view(ApplicationPanelView("whitelist"))
-    bot.add_view(ApplicationPanelView("staff"))
-    bot.add_view(ApplicationPanelView("manager"))
+    bot.add_view(UnifiedApplicationPanel())
+    bot.add_view(SuggestionPanelView())
+    bot.add_view(ReviewPanelView())
+    bot.add_view(StarSelectView())
 
-    # Load invite cache
     guild = bot.get_guild(GUILD_ID)
     if guild:
         await update_voice_channels(guild)
@@ -1541,7 +1746,7 @@ async def on_ready():
     print("Bot is fully online and ready.")
 
 # ============================================
-# SECTION 21 — START BOT
+# SECTION 23 — START BOT
 # ============================================
 
 if __name__ == "__main__":
