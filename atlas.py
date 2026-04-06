@@ -83,11 +83,11 @@ DUTY_LEADERBOARD_CHANNEL_ID  = 1490341549719162971
 SECURITY_LOG_CHANNEL_ID      = 1490340271156756490
 
 # ============ INVITE TRACKER ============
-INVITE_LOG_CHANNEL_ID = 1490493231107145820  # <-- βάλε το ID του καναλιού για invite logs
+INVITE_LOG_CHANNEL_ID = 0  # <-- βάλε το ID του καναλιού για invite logs
 
 # ============ PANEL IMAGES ============
-SERVER_BANNER_URL    = "https://i.imgur.com/Ef5IrZM.jpeg"  # <-- μεγάλη εικόνα server
-SERVER_THUMBNAIL_URL = "https://i.imgur.com/tn7Q8sf.png"  # <-- μικρό thumbnail
+SERVER_BANNER_URL    = "https://i.imgur.com/TQdHB7o.jpeg"  # <-- μεγάλη εικόνα server
+SERVER_THUMBNAIL_URL = "https://i.imgur.com/TQdHB7o.jpeg"  # <-- μικρό thumbnail
 
 # ROLES ΠΟΥ ΜΠΟΡΟΥΝ ΝΑ ΚΑΝΟΥΝ ACCEPT/DENY
 APPLICATION_MANAGER_ROLES = [FOUNDER_ROLE_ID, OWNER_ID, CO_OWNER_ID, WHITELIST_MANAGER_ROLE_ID, APPLICATION_MANAGER_ID]
@@ -989,11 +989,23 @@ class BotVerificationView(discord.ui.View):
         if not interaction.user.guild_permissions.administrator:
             return await interaction.response.send_message("❌ Μόνο admins.", ephemeral=True)
         pending_bots.pop(str(self.bot_member.id), None)
+
+        # Αφαίρεσε τα channel-specific overwrites ώστε να ισχύουν τα default permissions
+        try:
+            for channel in interaction.guild.channels:
+                try:
+                    await channel.set_permissions(self.bot_member, overwrite=None,
+                        reason="Bot accepted - permissions restored")
+                except:
+                    pass
+        except:
+            pass
+
         await interaction.message.edit(
             content=f"✅ Bot **{self.bot_member}** έγινε **accepted** από {interaction.user.mention}.",
             view=None
         )
-        await interaction.response.send_message("✅ Bot accepted.", ephemeral=True)
+        await interaction.response.send_message("✅ Bot accepted! Permissions αποκαταστάθηκαν.", ephemeral=True)
 
     @discord.ui.button(label="❌ Deny Bot (Kick)", style=discord.ButtonStyle.red, custom_id="bot_deny_placeholder")
     async def deny_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -1090,7 +1102,9 @@ async def on_message(message: discord.Message):
 
     # ---- ANTI-LINK ----
     if guild and URL_PATTERN.search(message.content):
-        if not author.guild_permissions.administrator:
+        exempt_roles = [FOUNDER_ROLE_ID, OWNER_ID]
+        is_exempt = any(r.id in exempt_roles for r in author.roles)
+        if not is_exempt and not author.guild_permissions.administrator:
             try:
                 await message.delete()
             except:
@@ -1151,11 +1165,28 @@ async def on_member_join(member: discord.Member):
 
     # BOT VERIFICATION
     if member.bot:
+        # Αφαίρεσε ΟΛΑ τα permissions από το bot μέχρι να γίνει accept
+        try:
+            # Βάλε το bot σε όλα τα channels με view_channel=False
+            for channel in member.guild.channels:
+                try:
+                    await channel.set_permissions(member, 
+                        send_messages=False,
+                        read_messages=False,
+                        connect=False,
+                        speak=False,
+                        reason="Bot pending verification"
+                    )
+                except:
+                    pass
+        except:
+            pass
+
         sec_log = bot.get_channel(SECURITY_LOG_CHANNEL_ID)
         if sec_log:
             embed = discord.Embed(
                 title="🤖 Νέο Bot Εντοπίστηκε!",
-                description=f"Το bot **{member}** ({member.mention}) μπήκε στον server.\nΑποφασίστε αν θα παραμείνει:",
+                description=f"Το bot **{member}** ({member.mention}) μπήκε στον server.\nΑποφασίστε αν θα παραμείνει:\n\n⚠️ Το bot έχει **μηδενικά permissions** μέχρι να γίνει Accept.",
                 color=discord.Color.yellow(),
                 timestamp=discord.utils.utcnow()
             )
