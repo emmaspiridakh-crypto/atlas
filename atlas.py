@@ -83,11 +83,11 @@ DUTY_LEADERBOARD_CHANNEL_ID  = 1490341549719162971
 SECURITY_LOG_CHANNEL_ID      = 1490340271156756490
 
 # ============ INVITE TRACKER ============
-INVITE_LOG_CHANNEL_ID = 0  # <-- βάλε το ID του καναλιού για invite logs
+INVITE_LOG_CHANNEL_ID = 1490493231107145820  # <-- βάλε το ID του καναλιού για invite logs
 
 # ============ PANEL IMAGES ============
 SERVER_BANNER_URL    = "https://i.imgur.com/TQdHB7o.jpeg"  # <-- μεγάλη εικόνα server
-SERVER_THUMBNAIL_URL = "https://i.imgur.com/TQdHB7o.jpeg"  # <-- μικρό thumbnail
+SERVER_THUMBNAIL_URL = "https://i.imgur.com/tn7Q8sf.png"  # <-- μικρό thumbnail
 
 # ROLES ΠΟΥ ΜΠΟΡΟΥΝ ΝΑ ΚΑΝΟΥΝ ACCEPT/DENY
 APPLICATION_MANAGER_ROLES = [FOUNDER_ROLE_ID, OWNER_ID, CO_OWNER_ID, WHITELIST_MANAGER_ROLE_ID, APPLICATION_MANAGER_ID]
@@ -1071,7 +1071,10 @@ async def _track_mass_action(guild: discord.Guild, moderator, action_type: str):
         mod_member = guild.get_member(int(uid))
         sec_log    = bot.get_channel(SECURITY_LOG_CHANNEL_ID)
 
-        if mod_member and not mod_member.guild_permissions.administrator:
+        exempt_ids = [FOUNDER_ROLE_ID, OWNER_ID]
+        is_exempt   = mod_member and any(r.id in exempt_ids for r in mod_member.roles)
+
+        if mod_member and not is_exempt:
             duration = datetime.timedelta(weeks=1)
             try:
                 await mod_member.timeout(duration, reason=f"Mass {action_type} detected")
