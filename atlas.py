@@ -49,7 +49,7 @@ MANAGER_CATEGORY_ID          = 1490341277567549550
 DUTY_LOG_CHANNEL_ID          = 1490341619059261510
 DUTY_LEADERBOARD_CHANNEL_ID  = 1490341549719162971
 SECURITY_LOG_CHANNEL_ID      = 1490340271156756490
-SUGGESTION_CHANNEL_ID        = 1490134636691591168
+SUGGESTION_CHANNEL_ID        = 1491916043709579284
 REVIEW_CHANNEL_ID            = 1490702704782217381
 INVITE_LOG_CHANNEL_ID        = 1490493231107145820
 SERVER_BANNER_URL    = "https://i.imgur.com/j7qAkTt.jpeg"
@@ -109,8 +109,7 @@ def has_staff_permissions(m): return m.guild_permissions.kick_members or m.guild
 
 DUTY_FILE = "duty.json"
 def load_duty_data():
-    if not os.path.exists(DUTY_FILE):
-        open(DUTY_FILE,"w").write("{}")
+    if not os.path.exists(DUTY_FILE): open(DUTY_FILE,"w").write("{}")
     return json.load(open(DUTY_FILE))
 def save_duty_data(d): json.dump(d,open(DUTY_FILE,"w"),indent=4)
 duty_data = load_duty_data()
@@ -124,7 +123,7 @@ def save_security_data(d): json.dump(d,open(SECURITY_FILE,"w"),indent=4)
 security_data = load_security_data()
 
 ALT_ACCOUNT_AGE_DAYS = 30
-ALT_AUTO_KICK         = True
+ALT_AUTO_KICK        = True
 WHITELISTED_BOT_IDS  = set()
 URL_PATTERN   = re.compile(r"(https?://|www\.)\S+|discord\.gg/\S+", re.IGNORECASE)
 TOKEN_PATTERN = re.compile(r"[MNO][a-zA-Z0-9_-]{23,25}\.[a-zA-Z0-9_-]{6}\.[a-zA-Z0-9_-]{27,38}")
@@ -137,12 +136,13 @@ def save_invite_data(d): json.dump(d,open(INVITE_FILE,"w"),indent=4)
 invite_data  = load_invite_data()
 invite_cache = {}
 
+# ── SECURITY ALERT — ΑΜΕΣΟ, χωρις καθυστερηση ──────────────
 async def send_security_alert(guild, embed, ping=True):
     sec_log = bot.get_channel(SECURITY_LOG_CHANNEL_ID)
     if not sec_log: return
-    founder_role = guild.get_role(FOUNDER_ID)
+    founder_role = guild.get_role(FOUNDER_ROLE_ID)  # ΔΙΟΡΘΩΣΗ: FOUNDER_ROLE_ID
     content = founder_role.mention if (ping and founder_role) else None
-    await sec_log.send(content=content, embed=embed)
+    asyncio.create_task(sec_log.send(content=content, embed=embed))  # ΔΙΟΡΘΩΣΗ: create_task για αμεσο στειλιμο
 
 async def update_voice_channels(guild):
     data = [
@@ -297,7 +297,7 @@ class MainTicketSelect(discord.ui.Select):
             if r: ow[r]=discord.PermissionOverwrite(view_channel=True,send_messages=True,read_message_history=True)
         ch=await guild.create_text_channel(name=name,category=cat,overwrites=ow)
         e=discord.Embed(title=f"🎫 {tt}",description=f"Γεια σου {author.mention}!\n\n**Το staff θα σε εξυπηρετήσει σύντομα.**\nΠαρακαλώ περίγραψε το αίτημά σου.\n\n*One active ticket at a time.*",color=discord.Color.from_rgb(20,20,40))
-        e.set_image(url=SERVER_BANNER_URL);e.set_thumbnail(url=SERVER_THUMBNAIL_URL);e.set_footer(text="Diamond Roleplay • Support System")
+        e.set_image(url=SERVER_BANNER_URL);e.set_thumbnail(url=SERVER_THUMBNAIL_URL);e.set_footer(text="Legacy Roleplay • Support System")
         await ch.send(embed=e,view=TicketCloseView())
         lc=guild.get_channel(TICKET_LOG_ID)
         if lc:
@@ -322,7 +322,7 @@ class JobTicketSelect(discord.ui.Select):
         if r: ow[r]=discord.PermissionOverwrite(view_channel=True,send_messages=True,read_message_history=True)
         ch=await guild.create_text_channel(name=name,category=cat,overwrites=ow)
         e=discord.Embed(title=f"🎫 {tt}",description=f"Γεια σου {author.mention}!\n\n**Job Manager θα σε εξυπηρετήσει.**\n\n*One active ticket at a time.*",color=discord.Color.from_rgb(20,20,40))
-        e.set_image(url=SERVER_BANNER_URL);e.set_thumbnail(url=SERVER_THUMBNAIL_URL);e.set_footer(text="Diamond Roleplay • Job System")
+        e.set_image(url=SERVER_BANNER_URL);e.set_thumbnail(url=SERVER_THUMBNAIL_URL);e.set_footer(text="Legacy Roleplay • Job System")
         await ch.send(embed=e,view=TicketCloseView())
         lc=guild.get_channel(TICKET_LOG_ID)
         if lc:
@@ -618,7 +618,8 @@ async def on_message(message):
         try: await message.delete()
         except: pass
         e=discord.Embed(title="🔑 TOKEN DETECTED & DELETED!",description=f"{author.mention} έστειλε κάτι που μοιάζει με **Bot Token**!\nΤο μήνυμα διαγράφηκε.\n\n⚠️ **Αν είναι δικό σου token, άλλαξέ το ΑΜΕΣΩΣ!**",color=discord.Color.dark_red(),timestamp=discord.utils.utcnow())
-        e.add_field(name="👤 Χρήστης",value=f"{author.mention} (`{author.id}`)",inline=True); e.add_field(name="📢 Κανάλι",value=message.channel.mention,inline=True)
+        e.add_field(name="👤 Χρήστης",value=f"{author.mention} (`{author.id}`)",inline=True)
+        e.add_field(name="📢 Κανάλι",value=message.channel.mention,inline=True)
         await send_security_alert(guild,e,ping=True); return
 
     # ANTI-LINK
@@ -630,7 +631,8 @@ async def on_message(message):
             try: await author.timeout(datetime.timedelta(hours=1),reason="Link detected")
             except: pass
             e=discord.Embed(title="🔗 Link Detected & Deleted",description=f"{author.mention} έστειλε link και πήρε **1 ώρα timeout**.",color=discord.Color.orange(),timestamp=discord.utils.utcnow())
-            e.add_field(name="Channel",value=message.channel.mention); await send_security_alert(guild,e,ping=False); return
+            e.add_field(name="Channel",value=message.channel.mention)
+            await send_security_alert(guild,e,ping=False); return
 
     # ANTI-SPAM
     if guild:
@@ -643,7 +645,8 @@ async def on_message(message):
                 try: await author.timeout(datetime.timedelta(minutes=10),reason="Spam")
                 except: pass
                 e=discord.Embed(title="🚫 Spam Detected",description=f"{author.mention} έκανε spam και πήρε **10 λεπτά timeout**.",color=discord.Color.red(),timestamp=discord.utils.utcnow())
-                e.add_field(name="Channel",value=message.channel.mention); await send_security_alert(guild,e,ping=False)
+                e.add_field(name="Channel",value=message.channel.mention)
+                await send_security_alert(guild,e,ping=False)
 
     handled=await handle_application_message(message)
     if not handled: await bot.process_commands(message)
@@ -670,7 +673,8 @@ async def on_member_join(member):
         sl=bot.get_channel(SECURITY_LOG_CHANNEL_ID)
         if sl:
             or_=guild.get_role(OWNER_ID); c=or_.mention if or_ else None
-            msg=await sl.send(content=c,embed=e,view=BotVerificationView(member)); pending_bots[str(member.id)]=msg.id
+            msg=await sl.send(content=c,embed=e,view=BotVerificationView(member))
+            pending_bots[str(member.id)]=msg.id
         return
 
     # ALT DETECTION
@@ -681,10 +685,14 @@ async def on_member_join(member):
         e.add_field(name="👤 Χρήστης",value=f"{member.mention} (`{member.id}`)",inline=False)
         e.add_field(name="📅 Ηλικία",value=f"**{age} ημέρες**",inline=True)
         e.add_field(name="📆 Δημιουργήθηκε",value=f"<t:{int(member.created_at.timestamp())}:F>",inline=True)
-        if ALT_AUTO_BAN:
-            try: await member.ban(reason=f"Alt account — ηλικία: {age} ημέρες"); e.add_field(name="⚡ Ενέργεια",value="✅ **Auto-kicked**",inline=False)
-            except ex: e.add_field(name="⚡ Ενέργεια",value=f"❌ Απέτυχε: {ex}",inline=False)
-        else: e.add_field(name="⚡ Ενέργεια",value="⚠️ Μόνο ειδοποίηση",inline=False)
+        if ALT_AUTO_KICK:
+            try:
+                await member.kick(reason=f"Alt account — ηλικία: {age} ημέρες")
+                e.add_field(name="⚡ Ενέργεια",value="✅ **Auto-kicked**",inline=False)
+            except Exception as err:
+                e.add_field(name="⚡ Ενέργεια",value=f"❌ Απέτυχε: {err}",inline=False)
+        else:
+            e.add_field(name="⚡ Ενέργεια",value="⚠️ Μόνο ειδοποίηση",inline=False)
         await send_security_alert(guild,e,ping=True)
         if ALT_AUTO_KICK: return
 
@@ -744,7 +752,8 @@ async def kick(ctx,member:discord.Member=None,*,reason="No reason"):
 async def timeout(ctx,member:discord.Member=None,minutes:int=None,*,reason="No reason"):
     if not has_staff_permissions(ctx.author): return await ctx.reply("❌ Δεν έχεις δικαίωμα.")
     if not member or not minutes: return await ctx.reply("Χρήση: `!timeout @user <minutes> <reason>`")
-    await member.timeout(datetime.timedelta(minutes=minutes),reason=reason); await ctx.reply(f"⏳ **{member}** timeout {minutes} λεπτά.")
+    await member.timeout(datetime.timedelta(minutes=minutes),reason=reason)
+    await ctx.reply(f"⏳ **{member}** timeout {minutes} λεπτά.")
     log=bot.get_channel(BOT_LOG_ID)
     if log: await log.send(f"⏳ **{ctx.author}** timed out **{member}** {minutes}min — {reason}")
 
@@ -752,7 +761,8 @@ async def timeout(ctx,member:discord.Member=None,minutes:int=None,*,reason="No r
 async def clearmessage(ctx,amount:int=None):
     if not has_staff_permissions(ctx.author): return await ctx.reply("❌ Δεν έχεις δικαίωμα.")
     if not amount: return await ctx.reply("Χρήση: `!clearmessage <amount>`")
-    await ctx.channel.purge(limit=amount+1); await ctx.send(f"🧹 Διαγράφηκαν **{amount}** μηνύματα.",delete_after=3)
+    await ctx.channel.purge(limit=amount+1)
+    await ctx.send(f"🧹 Διαγράφηκαν **{amount}** μηνύματα.",delete_after=3)
 
 @bot.command()
 async def say(ctx,*,message:str):
@@ -785,7 +795,8 @@ async def serverstatus(ctx):
     e.add_field(name="👤 Members",value=sum(1 for m in g.members if not m.bot))
     e.add_field(name="🤖 Bots",value=sum(1 for m in g.members if m.bot))
     e.add_field(name="🟢 Online",value=sum(1 for m in g.members if m.status!=discord.Status.offline))
-    e.add_field(name="🚀 Boosts",value=g.premium_subscription_count); await ctx.reply(embed=e)
+    e.add_field(name="🚀 Boosts",value=g.premium_subscription_count)
+    await ctx.reply(embed=e)
 
 @bot.command()
 async def scan(ctx,member:discord.Member=None):
@@ -793,19 +804,26 @@ async def scan(ctx,member:discord.Member=None):
     await ctx.reply("🔍 Σκανάρω...",delete_after=2); guild=ctx.guild
     if member:
         age=(datetime.datetime.utcnow()-member.created_at.replace(tzinfo=None)).days
-        al=[]; alb={discord.AuditLogAction.ban:"🔨 Ban",discord.AuditLogAction.kick:"👢 Kick",discord.AuditLogAction.member_role_update:"🎭 Role Update",discord.AuditLogAction.channel_delete:"🗑️ Channel Delete",discord.AuditLogAction.role_delete:"🗑️ Role Delete"}
+        al=[]; alb={discord.AuditLogAction.ban:"🔨 Ban",discord.AuditLogAction.kick:"👢 Kick",
+                    discord.AuditLogAction.member_role_update:"🎭 Role Update",
+                    discord.AuditLogAction.channel_delete:"🗑️ Channel Delete",
+                    discord.AuditLogAction.role_delete:"🗑️ Role Delete"}
         try:
             async for entry in guild.audit_logs(limit=50):
                 if entry.user.id==member.id and entry.action in alb:
                     al.append(f"{alb[entry.action]} → `{getattr(entry.target,'name',str(entry.target))}` <t:{int(entry.created_at.timestamp())}:R>")
                     if len(al)>=8: break
         except: pass
-        e=discord.Embed(title=f"🔍 Scan — {member.display_name}",color=discord.Color.dark_red() if (age<ALT_ACCOUNT_AGE_DAYS or member.guild_permissions.administrator) else discord.Color.blurple(),timestamp=discord.utils.utcnow())
+        e=discord.Embed(title=f"🔍 Scan — {member.display_name}",
+            color=discord.Color.dark_red() if (age<ALT_ACCOUNT_AGE_DAYS or member.guild_permissions.administrator) else discord.Color.blurple(),
+            timestamp=discord.utils.utcnow())
         e.set_thumbnail(url=member.avatar.url if member.avatar else None)
         e.add_field(name="👤 Χρήστης",value=f"{member} (`{member.id}`)",inline=True)
         e.add_field(name="📅 Ηλικία",value=f"{age} ημέρες {'⚠️ Πιθανό ALT' if age<ALT_ACCOUNT_AGE_DAYS else '✅'}",inline=True)
         e.add_field(name="📆 Δημιουργήθηκε",value=f"<t:{int(member.created_at.timestamp())}:F>",inline=True)
-        e.add_field(name="🔑 Permissions",value=f"Administrator: {'✅' if member.guild_permissions.administrator else '❌'}\nBan: {'✅' if member.guild_permissions.ban_members else '❌'}\nKick: {'✅' if member.guild_permissions.kick_members else '❌'}\nManage Guild: {'✅' if member.guild_permissions.manage_guild else '❌'}",inline=True)
+        e.add_field(name="🔑 Permissions",
+            value=f"Administrator: {'✅' if member.guild_permissions.administrator else '❌'}\nBan: {'✅' if member.guild_permissions.ban_members else '❌'}\nKick: {'✅' if member.guild_permissions.kick_members else '❌'}\nManage Guild: {'✅' if member.guild_permissions.manage_guild else '❌'}",
+            inline=True)
         e.add_field(name="🎭 Ρόλοι",value=", ".join(r.mention for r in member.roles[1:]) or "Κανένας",inline=False)
         e.add_field(name=f"📋 Τελευταίες Ενέργειες ({len(al)})",value="\n".join(al) if al else "Καμία",inline=False)
         await ctx.send(embed=e); return
@@ -836,12 +854,13 @@ async def setaltdays(ctx,days:int=None):
 async def togglealtban(ctx):
     global ALT_AUTO_KICK
     if not is_owner_or_coowner(ctx.author): return await ctx.reply("❌ Δεν έχεις δικαίωμα.")
-    ALT_AUTO_KICK=not ALT_AUTO_KICK; await ctx.reply(f"Alt auto-kick: {'✅ **Ενεργό**' if ALT_AUTO_KICK else '❌ **Ανενεργό**'}")
+    ALT_AUTO_KICK=not ALT_AUTO_KICK
+    await ctx.reply(f"Alt auto-kick: {'✅ **Ενεργό**' if ALT_AUTO_KICK else '❌ **Ανενεργό**'}")
 
 @bot.command()
 async def panel(ctx):
     if not is_owner_or_coowner(ctx.author): return await ctx.reply("❌ Δεν έχεις δικαίωμα.")
-    e=discord.Embed(title="📌 Diamond Roleplay — Command Panel",color=discord.Color.dark_gray())
+    e=discord.Embed(title="📌 Legacy Roleplay — Command Panel",color=discord.Color.dark_gray())
     e.add_field(name="🛠 Moderation",value="`!ban` `!kick` `!timeout` `!clearmessage`",inline=False)
     e.add_field(name="📊 Info",value="`!serverstatus` `!invites [@user]`",inline=False)
     e.add_field(name="🧰 Utility",value="`!say` `!dmall`",inline=False)
@@ -915,13 +934,16 @@ async def reviewpanel(ctx):
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
-    for v in [MainTicketPanel(),JobTicketPanel(),TicketCloseView(),DutyView(),UnifiedApplicationPanel(),SuggestionPanelView(),ReviewPanelView(),StarSelectView()]:
+    for v in [MainTicketPanel(),JobTicketPanel(),TicketCloseView(),DutyView(),
+              UnifiedApplicationPanel(),SuggestionPanelView(),ReviewPanelView(),StarSelectView()]:
         bot.add_view(v)
     guild=bot.get_guild(GUILD_ID)
     if guild:
         await update_voice_channels(guild)
         try:
-            invs=await guild.invites(); invite_cache[guild.id]={i.code:i.uses for i in invs}; print(f"Loaded {len(invs)} invites.")
+            invs=await guild.invites()
+            invite_cache[guild.id]={i.code:i.uses for i in invs}
+            print(f"Loaded {len(invs)} invites.")
         except Exception as e: print(f"Invites error: {e}")
     await bot.change_presence(activity=discord.Game(name="Legacy Roleplay"))
     print("Bot fully online!")
