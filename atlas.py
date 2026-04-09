@@ -92,8 +92,8 @@ REVIEW_CHANNEL_ID            = 1490702704782217381 # <-- βάλε το ID του
 INVITE_LOG_CHANNEL_ID = 1490493231107145820
 
 # ============ PANEL IMAGES ============
-SERVER_BANNER_URL    = "https://i.imgur.com/TQdHB7o.jpeg"
-SERVER_THUMBNAIL_URL = "https://i.imgur.com/tn7Q8sf.png"
+SERVER_BANNER_URL    = "https://i.imgur.com/ANK1749.png"
+SERVER_THUMBNAIL_URL = "https://i.imgur.com/mYOLuXR.png"
 
 # ROLES ΠΟΥ ΜΠΟΡΟΥΝ ΝΑ ΚΑΝΟΥΝ ACCEPT/DENY
 APPLICATION_MANAGER_ROLES = [FOUNDER_ROLE_ID, OWNER_ID, CO_OWNER_ID, WHITELIST_MANAGER_ROLE_ID, APPLICATION_MANAGER_ID]
@@ -506,7 +506,7 @@ class MainTicketSelect(discord.ui.Select):
         )
         embed.set_image(url=SERVER_BANNER_URL)
         embed.set_thumbnail(url=SERVER_THUMBNAIL_URL)
-        embed.set_footer(text="Atlas Roleplay • Support System")
+        embed.set_footer(text="Diamond Roleplay • Support System")
         await channel.send(embed=embed, view=TicketCloseView())
 
         log_channel = guild.get_channel(TICKET_LOG_ID)
@@ -571,7 +571,7 @@ class JobTicketSelect(discord.ui.Select):
         )
         embed.set_image(url=SERVER_BANNER_URL)
         embed.set_thumbnail(url=SERVER_THUMBNAIL_URL)
-        embed.set_footer(text="Atlas Roleplay • Job System")
+        embed.set_footer(text="Diamond Roleplay • Job System")
         await channel.send(embed=embed, view=TicketCloseView())
 
         log_channel = guild.get_channel(TICKET_LOG_ID)
@@ -1148,7 +1148,7 @@ class SuggestionModal(discord.ui.Modal, title="💡 Make a Suggestion"):
             icon_url=interaction.user.avatar.url if interaction.user.avatar else None
         )
         embed.set_thumbnail(url=SERVER_THUMBNAIL_URL)
-        embed.set_footer(text=f"User ID: {interaction.user.id} • Atlas Roleplay")
+        embed.set_footer(text=f"User ID: {interaction.user.id} • Diamond Roleplay")
 
         msg = await channel.send(embed=embed)
         await msg.add_reaction("👍")
@@ -1208,7 +1208,7 @@ class ReviewModal(discord.ui.Modal, title="⭐ Make a Review"):
             icon_url=interaction.user.avatar.url if interaction.user.avatar else None
         )
         embed.set_thumbnail(url=SERVER_THUMBNAIL_URL)
-        embed.set_footer(text=f"User ID: {interaction.user.id} • Atlas Roleplay")
+        embed.set_footer(text=f"User ID: {interaction.user.id} • Diamond Roleplay")
 
         await channel.send(embed=embed)
         await interaction.response.send_message(f"✅ Το review σου ({star_display}) στάλθηκε! Ευχαριστούμε!", ephemeral=True)
@@ -1555,7 +1555,7 @@ async def serverstatus(ctx):
 async def panel(ctx):
     if not is_owner_or_coowner(ctx.author):
         return await ctx.reply("❌ Δεν έχεις δικαίωμα.")
-    embed = discord.Embed(title="📌 Atlas Roleplay — Command Panel",
+    embed = discord.Embed(title="📌 Diamond Roleplay — Command Panel",
                           description="Όλες οι βασικές εντολές του bot.",
                           color=discord.Color.dark_gray())
     embed.add_field(name="🛠 Moderation",   value="`!ban`, `!kick`, `!timeout`, `!clearmessage`",           inline=False)
@@ -1576,7 +1576,7 @@ async def ticketpanel(ctx):
     if not is_owner_or_coowner(ctx.author):
         return await ctx.reply("Δεν έχεις δικαίωμα.")
     embed = discord.Embed(
-        title="Atlas Roleplay — Support Panel",
+        title="Diamond Roleplay — Support Panel",
         description=(
             "**Open a ticket to contact the appropriate staff member.**\n"
             "Our staff are here to help with anything you need!\n\n"
@@ -1586,7 +1586,7 @@ async def ticketpanel(ctx):
     )
     embed.set_image(url=SERVER_BANNER_URL)
     embed.set_thumbnail(url=SERVER_THUMBNAIL_URL)
-    embed.set_footer(text="Atlas Roleplay • Support System")
+    embed.set_footer(text="Diamond Roleplay • Support System")
     await ctx.send(embed=embed, view=MainTicketPanel())
     await ctx.reply("Το νέο ticket panel στάλθηκε.", delete_after=2)
 
@@ -1595,7 +1595,7 @@ async def jobpanel(ctx):
     if not is_owner_or_coowner(ctx.author):
         return await ctx.reply("Δεν έχεις δικαίωμα.")
     embed = discord.Embed(
-        title="Atlas Roleplay — Job Panel",
+        title="Diamond Roleplay — Job Panel",
         description=(
             "**Επίλεξε την κατηγορία job ticket που χρειάζεσαι.**\n"
             "Η ομάδα μας θα σε εξυπηρετήσει άμεσα!\n\n"
@@ -1605,7 +1605,7 @@ async def jobpanel(ctx):
     )
     embed.set_image(url=SERVER_BANNER_URL)
     embed.set_thumbnail(url=SERVER_THUMBNAIL_URL)
-    embed.set_footer(text="Atlas Roleplay • Job System")
+    embed.set_footer(text="Diamond Roleplay • Job System")
     await ctx.send(embed=embed, view=JobTicketPanel())
     await ctx.reply("Το νέο job ticket panel στάλθηκε.", delete_after=2)
 
@@ -1615,7 +1615,7 @@ async def applicationpanel(ctx):
     if not is_owner_or_coowner(ctx.author):
         return await ctx.reply("Δεν έχεις δικαίωμα.")
     embed = discord.Embed(
-        title="📋 Atlas Roleplay — Applications",
+        title="📋 Diamond Roleplay — Applications",
         description=(
             "**Επίλεξε τον τύπο αίτησης που θέλεις να κάνεις από το μενού παρακάτω.**\n\n"
             "📋 **Whitelist** — Για να μπεις στον server\n"
@@ -1627,7 +1627,7 @@ async def applicationpanel(ctx):
     )
     embed.set_image(url=SERVER_BANNER_URL)
     embed.set_thumbnail(url=SERVER_THUMBNAIL_URL)
-    embed.set_footer(text="Atlas Roleplay • Applications System")
+    embed.set_footer(text="Diamond Roleplay • Applications System")
     await ctx.send(embed=embed, view=UnifiedApplicationPanel())
     await ctx.reply("Application panel στάλθηκε.", delete_after=2)
 
@@ -1674,7 +1674,7 @@ async def suggestionpanel(ctx):
     if not is_owner_or_coowner(ctx.author):
         return await ctx.reply("Δεν έχεις δικαίωμα.")
     embed = discord.Embed(
-        title="💡 Atlas Roleplay — Suggestions",
+        title="💡 Diamond Roleplay — Suggestions",
         description=(
             "**Έχεις κάποια ιδέα ή πρόταση για τον server;**\n\n"
             "Πάτα το κουμπί παρακάτω, γράψε την πρότασή σου και στείλε τη!\n"
@@ -1685,7 +1685,7 @@ async def suggestionpanel(ctx):
     )
     embed.set_image(url=SERVER_BANNER_URL)
     embed.set_thumbnail(url=SERVER_THUMBNAIL_URL)
-    embed.set_footer(text="Atlas Roleplay • Suggestion System")
+    embed.set_footer(text="Diamond Roleplay • Suggestion System")
     await ctx.send(embed=embed, view=SuggestionPanelView())
     await ctx.reply("Suggestion panel στάλθηκε.", delete_after=2)
 
@@ -1695,7 +1695,7 @@ async def reviewpanel(ctx):
     if not is_owner_or_coowner(ctx.author):
         return await ctx.reply("Δεν έχεις δικαίωμα.")
     embed = discord.Embed(
-        title="⭐ Atlas Roleplay — Reviews",
+        title="⭐ Diamond Roleplay — Reviews",
         description=(
             "**Πώς σου φαίνεται ο server μας;**\n\n"
             "Πάτα το κουμπί παρακάτω, επίλεξε την αξιολόγησή σου (1-5 αστέρια)\n"
@@ -1711,7 +1711,7 @@ async def reviewpanel(ctx):
     )
     embed.set_image(url=SERVER_BANNER_URL)
     embed.set_thumbnail(url=SERVER_THUMBNAIL_URL)
-    embed.set_footer(text="Atlas Roleplay • Review System")
+    embed.set_footer(text="Diamond Roleplay • Review System")
     await ctx.send(embed=embed, view=ReviewPanelView())
     await ctx.reply("Review panel στάλθηκε.", delete_after=2)
 
@@ -1742,7 +1742,7 @@ async def on_ready():
         except Exception as e:
             print(f"Could not load invites: {e}")
 
-    await bot.change_presence(activity=discord.Game(name="Atlas Roleplay"))
+    await bot.change_presence(activity=discord.Game(name="Diamond Roleplay"))
     print("Bot is fully online and ready.")
 
 # ============================================
