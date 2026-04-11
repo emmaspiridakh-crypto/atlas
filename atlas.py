@@ -2,7 +2,6 @@ print(">>> BOT FILE LOADED <<<")
 
 import os, discord, asyncio, json, time, re
 from discord.ext import commands
-from discord import app_commands
 from flask import Flask
 from threading import Thread
 import datetime
@@ -107,6 +106,7 @@ def is_owner_or_coowner(u): return any(r.id in (FOUNDER_ROLE_ID,OWNER_ID,CO_OWNE
 def can_manage_applications(u): return any(r.id in APPLICATION_MANAGER_ROLES for r in u.roles)
 def has_staff_permissions(m): return m.guild_permissions.kick_members or m.guild_permissions.ban_members or any(r.id in (STAFF_ID,MANAGER_ID,OWNER_ID,CO_OWNER_ID,FOUNDER_ROLE_ID) for r in m.roles)
 
+# ── DUTY ─────────────────────────────────────────────────────
 DUTY_FILE = "duty.json"
 def load_duty_data():
     if not os.path.exists(DUTY_FILE): open(DUTY_FILE,"w").write("{}")
@@ -114,6 +114,7 @@ def load_duty_data():
 def save_duty_data(d): json.dump(d,open(DUTY_FILE,"w"),indent=4)
 duty_data = load_duty_data()
 
+# ── SECURITY ──────────────────────────────────────────────────
 SECURITY_FILE = "security.json"
 def load_security_data():
     if not os.path.exists(SECURITY_FILE):
@@ -128,6 +129,10 @@ WHITELISTED_BOT_IDS  = set()
 URL_PATTERN   = re.compile(r"(https?://|www\.)\S+|discord\.gg/\S+", re.IGNORECASE)
 TOKEN_PATTERN = re.compile(r"[MNO][a-zA-Z0-9_-]{23,25}\.[a-zA-Z0-9_-]{6}\.[a-zA-Z0-9_-]{27,38}")
 
+# ── LOCKED APPLICATIONS ───────────────────────────────────────
+locked_applications = set()  # π.χ. {"whitelist", "staff", "manager"}
+
+# ── INVITES — persistent storage ─────────────────────────────
 INVITE_FILE = "invites.json"
 def load_invite_data():
     if not os.path.exists(INVITE_FILE): open(INVITE_FILE,"w").write("{}")
@@ -136,14 +141,15 @@ def save_invite_data(d): json.dump(d,open(INVITE_FILE,"w"),indent=4)
 invite_data  = load_invite_data()
 invite_cache = {}
 
-# ── SECURITY ALERT — ΑΜΕΣΟ, χωρις καθυστερηση ──────────────
+# ── SECURITY ALERT ────────────────────────────────────────────
 async def send_security_alert(guild, embed, ping=True):
     sec_log = bot.get_channel(SECURITY_LOG_CHANNEL_ID)
     if not sec_log: return
-    founder_role = guild.get_role(FOUNDER_ROLE_ID)  # ΔΙΟΡΘΩΣΗ: FOUNDER_ROLE_ID
+    founder_role = guild.get_role(FOUNDER_ROLE_ID)
     content = founder_role.mention if (ping and founder_role) else None
-    asyncio.create_task(sec_log.send(content=content, embed=embed))  # ΔΙΟΡΘΩΣΗ: create_task για αμεσο στειλιμο
+    asyncio.create_task(sec_log.send(content=content, embed=embed))
 
+# ── VOICE COUNTERS ────────────────────────────────────────────
 async def update_voice_channels(guild):
     data = [
         (MEMBERS_CHANNEL_ID, f"👤 Members: {sum(1 for m in guild.members if not m.bot)}"),
@@ -161,6 +167,7 @@ async def on_presence_update(before, after): await update_voice_channels(after.g
 async def on_guild_update(before, after):
     if before.premium_subscription_count != after.premium_subscription_count: await update_voice_channels(after)
 
+# ── VOICE LOGS ────────────────────────────────────────────────
 @bot.event
 async def on_voice_state_update(member, before, after):
     guild = member.guild; log = bot.get_channel(VOICE_LOG_CHANNEL_ID)
@@ -190,19 +197,39 @@ async def on_voice_state_update(member, before, after):
         e = discord.Embed(title="🔁 Voice Move", description=f"{member.mention} moved from **{before.channel.name}** to **{after.channel.name}**", color=discord.Color.yellow())
         e.set_thumbnail(url=member.avatar); e.set_footer(text=f"User ID: {member.id}"); await log.send(embed=e)
 
+# ── ROLE LOGS (βελτιωμένα με audit log για ποιος έκανε τι) ────
 @bot.event
 async def on_guild_role_create(role):
     log = bot.get_channel(ROLE_CREATE_LOG_CHANNEL_ID)
-    if log:
-        e = discord.Embed(title="🆕 Role Created", description=f"**{role.name}**", color=discord.Color.green())
-        e.set_footer(text=f"Role ID: {role.id}"); await log.send(embed=e)
+    if not log: return
+    moderator = "Άγνωστος"
+    try:
+        async for entry in role.guild.audit_logs(limit=1, action=discord.AuditLogAction.role_create):
+            moderator = entry.user.mention; break
+    except: pass
+    e = discord.Embed(title="🆕 Ρόλος Δημιουργήθηκε", color=discord.Color.green(), timestamp=discord.utils.utcnow())
+    e.add_field(name="📛 Όνομα",    value=f"**{role.name}**",   inline=True)
+    e.add_field(name="🎨 Χρώμα",   value=str(role.color),       inline=True)
+    e.add_field(name="👤 Από",      value=moderator,             inline=True)
+    e.add_field(name="🆔 Role ID",  value=f"`{role.id}`",        inline=True)
+    e.set_footer(text="Legacy Roleplay • Role Log")
+    await log.send(embed=e)
 
 @bot.event
 async def on_guild_role_delete(role):
     log = bot.get_channel(ROLE_DELETE_LOG_CHANNEL_ID)
-    if log:
-        e = discord.Embed(title="🗑️ Role Deleted", description=f"**{role.name}**", color=discord.Color.red())
-        e.set_footer(text=f"Role ID: {role.id}"); await log.send(embed=e)
+    if not log: return
+    moderator = "Άγνωστος"
+    try:
+        async for entry in role.guild.audit_logs(limit=1, action=discord.AuditLogAction.role_delete):
+            moderator = entry.user.mention; break
+    except: pass
+    e = discord.Embed(title="🗑️ Ρόλος Διαγράφηκε", color=discord.Color.red(), timestamp=discord.utils.utcnow())
+    e.add_field(name="📛 Όνομα",   value=f"**{role.name}**",  inline=True)
+    e.add_field(name="👤 Από",     value=moderator,            inline=True)
+    e.add_field(name="🆔 Role ID", value=f"`{role.id}`",       inline=True)
+    e.set_footer(text="Legacy Roleplay • Role Log")
+    await log.send(embed=e)
 
 @bot.event
 async def on_member_update(before, after):
@@ -212,44 +239,78 @@ async def on_member_update(before, after):
         async for entry in guild.audit_logs(limit=5, action=discord.AuditLogAction.member_role_update):
             if entry.target.id == after.id:
                 if log:
-                    e = discord.Embed(title="➕ Role Added", color=discord.Color.green())
-                    e.add_field(name="User", value=after.mention, inline=False)
-                    e.add_field(name="Role", value=f"**{new_role.name}**", inline=False)
-                    e.add_field(name="Moderator", value=entry.user.mention, inline=False)
-                    e.set_footer(text=f"User ID: {after.id} | Role ID: {new_role.id}"); await log.send(embed=e)
+                    e = discord.Embed(title="➕ Role Added", color=discord.Color.green(), timestamp=discord.utils.utcnow())
+                    e.set_thumbnail(url=after.display_avatar.url)
+                    e.add_field(name="👤 Χρήστης",   value=after.mention,           inline=True)
+                    e.add_field(name="🎭 Ρόλος",     value=f"**{new_role.name}**",  inline=True)
+                    e.add_field(name="🛡️ Moderator", value=entry.user.mention,      inline=True)
+                    e.set_footer(text=f"User ID: {after.id} | Role ID: {new_role.id}")
+                    await log.send(embed=e)
                 break
     elif len(after.roles) < len(before.roles):
         removed = next(r for r in before.roles if r not in after.roles)
         async for entry in guild.audit_logs(limit=5, action=discord.AuditLogAction.member_role_update):
             if entry.target.id == after.id:
                 if log:
-                    e = discord.Embed(title="➖ Role Removed", color=discord.Color.red())
-                    e.add_field(name="User", value=after.mention, inline=False)
-                    e.add_field(name="Role", value=f"**{removed.name}**", inline=False)
-                    e.add_field(name="Moderator", value=entry.user.mention, inline=False)
-                    e.set_footer(text=f"User ID: {after.id} | Role ID: {removed.id}"); await log.send(embed=e)
+                    e = discord.Embed(title="➖ Role Removed", color=discord.Color.red(), timestamp=discord.utils.utcnow())
+                    e.set_thumbnail(url=after.display_avatar.url)
+                    e.add_field(name="👤 Χρήστης",   value=after.mention,          inline=True)
+                    e.add_field(name="🎭 Ρόλος",     value=f"**{removed.name}**",  inline=True)
+                    e.add_field(name="🛡️ Moderator", value=entry.user.mention,     inline=True)
+                    e.set_footer(text=f"User ID: {after.id} | Role ID: {removed.id}")
+                    await log.send(embed=e)
                 break
 
+# ── CHANNEL LOGS (βελτιωμένα με ποιος έκανε τι) ──────────────
 @bot.event
 async def on_guild_channel_create(channel):
     log = bot.get_channel(CHANNEL_CREATE_LOG_CHANNEL_ID)
-    if log: await log.send(f"📁 Channel created: **{channel.name}** (Type: {str(channel.type).title()})")
+    if not log: return
+    moderator = "Άγνωστος"
+    try:
+        async for entry in channel.guild.audit_logs(limit=1, action=discord.AuditLogAction.channel_create):
+            moderator = entry.user.mention; break
+    except: pass
+    e = discord.Embed(title="📁 Κανάλι Δημιουργήθηκε", color=discord.Color.green(), timestamp=discord.utils.utcnow())
+    e.add_field(name="📛 Όνομα",    value=f"**{channel.name}**",                    inline=True)
+    e.add_field(name="📂 Τύπος",   value=str(channel.type).capitalize(),            inline=True)
+    e.add_field(name="👤 Από",     value=moderator,                                 inline=True)
+    if hasattr(channel,"category") and channel.category:
+        e.add_field(name="🗂️ Κατηγορία", value=channel.category.name,             inline=True)
+    e.add_field(name="🆔 Channel ID", value=f"`{channel.id}`",                     inline=True)
+    e.set_footer(text="Legacy Roleplay • Channel Log")
+    await log.send(embed=e)
 
 @bot.event
 async def on_guild_channel_delete(channel):
     log = bot.get_channel(CHANNEL_DELETE_LOG_CHANNEL_ID)
-    if log: await log.send(f"🗑️ Channel deleted: **{channel.name}** (Type: {str(channel.type).title()})")
+    if not log: return
+    moderator = "Άγνωστος"
+    try:
+        async for entry in channel.guild.audit_logs(limit=1, action=discord.AuditLogAction.channel_delete):
+            moderator = entry.user.mention; break
+    except: pass
+    e = discord.Embed(title="🗑️ Κανάλι Διαγράφηκε", color=discord.Color.red(), timestamp=discord.utils.utcnow())
+    e.add_field(name="📛 Όνομα",     value=f"**{channel.name}**",          inline=True)
+    e.add_field(name="📂 Τύπος",    value=str(channel.type).capitalize(),  inline=True)
+    e.add_field(name="👤 Από",      value=moderator,                       inline=True)
+    e.add_field(name="🆔 Channel ID", value=f"`{channel.id}`",             inline=True)
+    e.set_footer(text="Legacy Roleplay • Channel Log")
+    await log.send(embed=e)
 
+# ── MESSAGE LOGS ──────────────────────────────────────────────
 @bot.event
 async def on_message_edit(before, after):
     if before.author.bot or before.content == after.content: return
     log = bot.get_channel(MESSAGE_EDIT_LOG_CHANNEL_ID)
     if log:
-        e = discord.Embed(title="✏️ Message Edited", color=discord.Color.orange())
-        e.add_field(name="User", value=f"{before.author} ({before.author.id})", inline=False)
-        e.add_field(name="Channel", value=before.channel.mention, inline=False)
-        e.add_field(name="Before", value=before.content or "None", inline=False)
-        e.add_field(name="After", value=after.content or "None", inline=False)
+        e = discord.Embed(title="✏️ Message Edited", color=discord.Color.orange(), timestamp=discord.utils.utcnow())
+        e.set_thumbnail(url=before.author.display_avatar.url)
+        e.add_field(name="👤 User",    value=f"{before.author.mention} (`{before.author.id}`)", inline=False)
+        e.add_field(name="📢 Channel", value=before.channel.mention, inline=False)
+        e.add_field(name="📝 Πριν",   value=before.content[:1020] or "None", inline=False)
+        e.add_field(name="📝 Μετά",   value=after.content[:1020] or "None", inline=False)
+        e.add_field(name="🔗 Link",    value=f"[Πήγαινε στο μήνυμα]({after.jump_url})", inline=False)
         await log.send(embed=e)
 
 @bot.event
@@ -257,12 +318,16 @@ async def on_message_delete(message):
     if message.author.bot: return
     log = bot.get_channel(MESSAGE_DELETE_LOG_CHANNEL_ID)
     if log:
-        e = discord.Embed(title="🗑️ Message Deleted", color=discord.Color.red())
-        e.add_field(name="User", value=str(message.author), inline=False)
-        e.add_field(name="Channel", value=message.channel.mention, inline=False)
-        e.add_field(name="Content", value=message.content or "None", inline=False)
+        e = discord.Embed(title="🗑️ Message Deleted", color=discord.Color.red(), timestamp=discord.utils.utcnow())
+        e.set_thumbnail(url=message.author.display_avatar.url)
+        e.add_field(name="👤 User",    value=f"{message.author.mention} (`{message.author.id}`)", inline=False)
+        e.add_field(name="📢 Channel", value=message.channel.mention, inline=False)
+        e.add_field(name="📝 Content", value=message.content[:1020] or "None", inline=False)
         await log.send(embed=e)
 
+# ══════════════════════════════════════════════════════════════
+#  TICKET SYSTEM
+# ══════════════════════════════════════════════════════════════
 class TicketCloseView(discord.ui.View):
     def __init__(self): super().__init__(timeout=None)
     @discord.ui.button(label="🔒 Close Ticket", style=discord.ButtonStyle.red, custom_id="close_ticket_button")
@@ -333,6 +398,9 @@ class JobTicketSelect(discord.ui.Select):
 class JobTicketPanel(discord.ui.View):
     def __init__(self): super().__init__(timeout=None); self.add_item(JobTicketSelect())
 
+# ══════════════════════════════════════════════════════════════
+#  APPLICATION SYSTEM
+# ══════════════════════════════════════════════════════════════
 active_application_sessions = {}
 
 class ReasonModal(discord.ui.Modal):
@@ -389,6 +457,9 @@ class StartApplicationView(discord.ui.View):
         self.start_btn.label=lm.get(app_type,"▶️ Start"); self.start_btn.custom_id=f"start_app_{app_type}"
     @discord.ui.button(label="▶️ Start",style=discord.ButtonStyle.blurple,custom_id="start_app_placeholder")
     async def start_btn(self,interaction,button):
+        # Ελεγχος αν το application ειναι κλειδωμενο
+        if self.app_type in locked_applications:
+            return await interaction.response.send_message(f"🔒 Οι αιτήσεις **{self.app_type.capitalize()}** είναι κλειστές αυτή τη στιγμή.",ephemeral=True)
         cid=interaction.channel.id
         if cid in active_application_sessions: return await interaction.response.send_message("Αίτηση σε εξέλιξη.",ephemeral=True)
         qs={"whitelist":WHITELIST_QUESTIONS,"staff":STAFF_QUESTIONS,"manager":MANAGER_QUESTIONS}.get(self.app_type,[])
@@ -431,7 +502,11 @@ class ApplicationSelect(discord.ui.Select):
               discord.SelectOption(label="👔 Manager Application",description="Αίτηση για Manager",emoji="👔",value="manager")]
         super().__init__(custom_id="unified_application_select",placeholder="📂 Επίλεξε τύπο αίτησης...",min_values=1,max_values=1,options=opts)
     async def callback(self,interaction):
-        app=self.values[0]; guild=interaction.guild; author=interaction.user
+        app=self.values[0]
+        # Ελεγχος αν το application ειναι κλειδωμενο
+        if app in locked_applications:
+            return await interaction.response.send_message(f"🔒 Οι αιτήσεις **{app.capitalize()}** είναι κλειστές αυτή τη στιγμή.",ephemeral=True)
+        guild=interaction.guild; author=interaction.user
         cat_id={"whitelist":WHITELIST_CATEGORY_ID,"staff":STAFF_CATEGORY_ID,"manager":MANAGER_CATEGORY_ID}.get(app)
         cat=guild.get_channel(cat_id); cname=f"{app}-{author.name}".replace(" ","-").lower()
         ex=discord.utils.get(guild.text_channels,name=cname)
@@ -451,9 +526,13 @@ class ApplicationSelect(discord.ui.Select):
 class UnifiedApplicationPanel(discord.ui.View):
     def __init__(self): super().__init__(timeout=None); self.add_item(ApplicationSelect())
 
+# ══════════════════════════════════════════════════════════════
+#  DUTY SYSTEM — με κουμπιά Status & Leaderboard
+# ══════════════════════════════════════════════════════════════
 class DutyView(discord.ui.View):
     def __init__(self): super().__init__(timeout=None)
-    @discord.ui.button(label="🟢 On Duty",style=discord.ButtonStyle.green,custom_id="duty_on")
+
+    @discord.ui.button(label="🟢 On Duty",style=discord.ButtonStyle.green,custom_id="duty_on",row=0)
     async def on_duty(self,interaction,button):
         uid=str(interaction.user.id); dr=interaction.guild.get_role(DUTY_ROLE_ID)
         if dr in interaction.user.roles: return await interaction.response.send_message("Είσαι ήδη On Duty!",ephemeral=True)
@@ -464,9 +543,10 @@ class DutyView(discord.ui.View):
         log=bot.get_channel(DUTY_LOG_CHANNEL_ID)
         if log:
             e=discord.Embed(title="🟢 On Duty",description=f"{interaction.user.mention} μπήκε On Duty.",color=discord.Color.green(),timestamp=discord.utils.utcnow())
-            e.set_thumbnail(url=interaction.user.avatar); await log.send(embed=e)
+            e.set_thumbnail(url=interaction.user.display_avatar.url); await log.send(embed=e)
         await interaction.response.send_message("✅ Είσαι On Duty!",ephemeral=True)
-    @discord.ui.button(label="🔴 Off Duty",style=discord.ButtonStyle.red,custom_id="duty_off")
+
+    @discord.ui.button(label="🔴 Off Duty",style=discord.ButtonStyle.red,custom_id="duty_off",row=0)
     async def off_duty(self,interaction,button):
         uid=str(interaction.user.id); dr=interaction.guild.get_role(DUTY_ROLE_ID)
         if dr not in interaction.user.roles: return await interaction.response.send_message("Δεν είσαι On Duty!",ephemeral=True)
@@ -480,24 +560,65 @@ class DutyView(discord.ui.View):
         log=bot.get_channel(DUTY_LOG_CHANNEL_ID)
         if log:
             e=discord.Embed(title="🔴 Off Duty",description=f"{interaction.user.mention} βγήκε Off Duty.",color=discord.Color.red(),timestamp=discord.utils.utcnow())
-            e.add_field(name="⏱ Session",value=ds); e.set_thumbnail(url=interaction.user.avatar); await log.send(embed=e)
+            e.add_field(name="⏱ Session",value=ds); e.set_thumbnail(url=interaction.user.display_avatar.url); await log.send(embed=e)
         await interaction.response.send_message(f"✅ Off Duty! Ήσουν on για **{ds}**.",ephemeral=True)
 
-async def update_duty_leaderboard(guild):
-    ch=guild.get_channel(DUTY_LEADERBOARD_CHANNEL_ID)
-    if not ch: return
-    su=sorted([(uid,d.get("total_seconds",0)) for uid,d in duty_data.items() if isinstance(d,dict)],key=lambda x:x[1],reverse=True)
-    e=discord.Embed(title="🏆 Duty Leaderboard",color=discord.Color.gold(),timestamp=discord.utils.utcnow())
-    medals=["🥇","🥈","🥉"]; desc=""
-    for i,(uid,secs) in enumerate(su[:10]):
-        member=guild.get_member(int(uid)); name=member.display_name if member else f"User {uid}"
-        h,r=divmod(int(secs),3600); m,_=divmod(r,60); medal=medals[i] if i<3 else f"**#{i+1}**"
-        desc+=f"{medal} {name} — {h}ω {m}λ\n"
-    e.description=desc or "Κανένας δεν έχει κάνει duty ακόμα."; e.set_footer(text="Ανανεώνεται αυτόματα")
-    async for msg in ch.history(limit=5):
-        if msg.author==guild.me: await msg.edit(embed=e); return
-    await ch.send(embed=e)
+    @discord.ui.button(label="📋 Duty Status",style=discord.ButtonStyle.blurple,custom_id="duty_status",row=1)
+    async def duty_status(self,interaction,button):
+        guild=interaction.guild; dr=guild.get_role(DUTY_ROLE_ID)
+        now=time.time()
+        # Βρες ατομα on duty
+        on_duty_members=[]
+        if dr:
+            for m in guild.members:
+                if dr in m.roles and not m.bot:
+                    uid=str(m.id)
+                    if uid in duty_data and "start_time" in duty_data[uid]:
+                        elapsed=now-duty_data[uid]["start_time"]
+                        h,rem=divmod(int(elapsed),3600); mn,sc=divmod(rem,60)
+                        on_duty_members.append((m,f"{h}ω {mn}λ {sc}δ"))
+                    else:
+                        on_duty_members.append((m,"0ω 0λ 0δ"))
+        e=discord.Embed(title="📋 Duty Status",color=discord.Color.blurple(),timestamp=discord.utils.utcnow())
+        if on_duty_members:
+            desc="\n".join(f"🟢 {m.mention} — `{dur}`" for m,dur in on_duty_members)
+            e.description=desc
+            e.set_footer(text=f"{len(on_duty_members)} άτομα on duty")
+        else:
+            e.description="❌ Κανένας δεν είναι On Duty αυτή τη στιγμή."
+        await interaction.response.send_message(embed=e,ephemeral=True)
 
+    @discord.ui.button(label="🏆 Leaderboard",style=discord.ButtonStyle.grey,custom_id="duty_leaderboard_btn",row=1)
+    async def leaderboard_btn(self,interaction,button):
+        guild=interaction.guild; now=time.time()
+        # Υπολογισε total + τρεχουσα session αν ειναι on duty
+        totals=[]
+        for uid,d in duty_data.items():
+            if not isinstance(d,dict): continue
+            total=d.get("total_seconds",0)
+            if "start_time" in d:
+                total+=now-d["start_time"]
+            totals.append((uid,total))
+        totals.sort(key=lambda x:x[1],reverse=True)
+        medals=["🥇","🥈","🥉"]
+        e=discord.Embed(title="🏆 Duty Leaderboard",color=discord.Color.gold(),timestamp=discord.utils.utcnow())
+        desc=""
+        for i,(uid,secs) in enumerate(totals[:10]):
+            member=guild.get_member(int(uid)); name=member.display_name if member else f"User {uid}"
+            h,rem=divmod(int(secs),3600); mn,_=divmod(rem,60)
+            medal=medals[i] if i<3 else f"**#{i+1}**"
+            # Δειξε αν ειναι τωρα on duty
+            dr=guild.get_role(DUTY_ROLE_ID)
+            is_on=""
+            if member and dr and dr in member.roles: is_on=" 🟢"
+            desc+=f"{medal} {name}{is_on} — `{h}ω {mn}λ`\n"
+        e.description=desc or "Κανένας δεν έχει κάνει duty ακόμα."
+        e.set_footer(text="🟢 = Τώρα on duty")
+        await interaction.response.send_message(embed=e,ephemeral=True)
+
+# ══════════════════════════════════════════════════════════════
+#  SECURITY SYSTEM
+# ══════════════════════════════════════════════════════════════
 spam_tracker={}; pending_bots={}; ban_kick_tracker={}
 
 class BotVerificationView(discord.ui.View):
@@ -544,8 +665,8 @@ async def on_member_remove(member):
     await update_voice_channels(member.guild)
     log=bot.get_channel(MEMBER_LEAVE_LOG_CHANNEL_ID)
     if log:
-        e=discord.Embed(title="🔴 Member Left",description=f"{member.mention}",color=discord.Color.red())
-        e.set_thumbnail(url=member.avatar); e.set_footer(text=f"User ID: {member.id}"); await log.send(embed=e)
+        e=discord.Embed(title="🔴 Member Left",description=f"{member.mention}",color=discord.Color.red(),timestamp=discord.utils.utcnow())
+        e.set_thumbnail(url=member.display_avatar.url); e.set_footer(text=f"User ID: {member.id}"); await log.send(embed=e)
 
 async def _track_mass_action(guild,moderator,action_type):
     uid=str(moderator.id) if hasattr(moderator,"id") else str(moderator); now=time.time()
@@ -560,6 +681,9 @@ async def _track_mass_action(guild,moderator,action_type):
             e=discord.Embed(title=f"⚠️ Mass {action_type.upper()} Detected!",description=f"{mm.mention} έκανε mass {action_type}.\n**1 εβδομάδα timeout** δόθηκε.",color=discord.Color.dark_red(),timestamp=discord.utils.utcnow())
             await send_security_alert(guild,e,ping=True)
 
+# ══════════════════════════════════════════════════════════════
+#  SUGGESTION SYSTEM
+# ══════════════════════════════════════════════════════════════
 class SuggestionModal(discord.ui.Modal,title="💡 Make a Suggestion"):
     suggestion_input=discord.ui.TextInput(label="Η πρότασή σου",style=discord.TextStyle.paragraph,placeholder="Γράψε εδώ...",required=True,max_length=1000)
     async def on_submit(self,interaction):
@@ -576,6 +700,9 @@ class SuggestionPanelView(discord.ui.View):
     @discord.ui.button(label="💡 Make a Suggestion",style=discord.ButtonStyle.blurple,custom_id="make_suggestion_btn")
     async def make_suggestion(self,interaction,button): await interaction.response.send_modal(SuggestionModal())
 
+# ══════════════════════════════════════════════════════════════
+#  REVIEW SYSTEM
+# ══════════════════════════════════════════════════════════════
 class ReviewModal(discord.ui.Modal,title="⭐ Make a Review"):
     review_input=discord.ui.TextInput(label="Το review σου",style=discord.TextStyle.paragraph,placeholder="Γράψε εδώ...",required=True,max_length=1000)
     def __init__(self,stars): super().__init__(); self.stars=stars
@@ -608,12 +735,14 @@ class ReviewPanelView(discord.ui.View):
         e=discord.Embed(title="⭐ Επίλεξε Αξιολόγηση",description="Επίλεξε αστέρια και γράψε σχόλιο!",color=discord.Color.from_rgb(255,215,0))
         await interaction.response.send_message(embed=e,view=StarSelectView(),ephemeral=True)
 
+# ══════════════════════════════════════════════════════════════
+#  ON MESSAGE
+# ══════════════════════════════════════════════════════════════
 @bot.event
 async def on_message(message):
     if message.author.bot: await bot.process_commands(message); return
     guild=message.guild; author=message.author
 
-    # TOKEN PROTECTION
     if guild and TOKEN_PATTERN.search(message.content):
         try: await message.delete()
         except: pass
@@ -622,7 +751,6 @@ async def on_message(message):
         e.add_field(name="📢 Κανάλι",value=message.channel.mention,inline=True)
         await send_security_alert(guild,e,ping=True); return
 
-    # ANTI-LINK
     if guild and URL_PATTERN.search(message.content):
         exempt=[FOUNDER_ROLE_ID,OWNER_ID]; is_ex=any(r.id in exempt for r in author.roles)
         if not is_ex and not author.guild_permissions.administrator:
@@ -634,7 +762,6 @@ async def on_message(message):
             e.add_field(name="Channel",value=message.channel.mention)
             await send_security_alert(guild,e,ping=False); return
 
-    # ANTI-SPAM
     if guild:
         uid=str(author.id); now=time.time()
         if uid not in spam_tracker: spam_tracker[uid]=[]
@@ -651,11 +778,13 @@ async def on_message(message):
     handled=await handle_application_message(message)
     if not handled: await bot.process_commands(message)
 
+# ══════════════════════════════════════════════════════════════
+#  ON MEMBER JOIN
+# ══════════════════════════════════════════════════════════════
 @bot.event
 async def on_member_join(member):
     guild=member.guild
 
-    # BOT DETECTION
     if member.bot:
         if member.id in WHITELISTED_BOT_IDS: return
         try:
@@ -677,7 +806,6 @@ async def on_member_join(member):
             pending_bots[str(member.id)]=msg.id
         return
 
-    # ALT DETECTION
     age=(datetime.datetime.utcnow()-member.created_at.replace(tzinfo=None)).days
     if age<ALT_ACCOUNT_AGE_DAYS:
         e=discord.Embed(title="🚨 ALT ACCOUNT DETECTED!",color=discord.Color.dark_red(),timestamp=discord.utils.utcnow())
@@ -696,13 +824,12 @@ async def on_member_join(member):
         await send_security_alert(guild,e,ping=True)
         if ALT_AUTO_KICK: return
 
-    # AUTOROLE
     r=guild.get_role(AUTOROLE_ID)
     if r:
         try: await member.add_roles(r)
         except: pass
 
-    # INVITE TRACKER
+    # ── INVITE TRACKER — persistent ──────────────────────────
     try:
         ni=await guild.invites(); nim={i.code:i.uses for i in ni}; inviter=None
         for code,ou in invite_cache.get(guild.id,{}).items():
@@ -718,20 +845,25 @@ async def on_member_join(member):
             if iid not in invite_data: invite_data[iid]={"total":0,"real":0,"left":0}
             invite_data[iid]["total"]=invite_data[iid].get("total",0)+1
             invite_data[iid]["real"]=invite_data[iid].get("total",0)-invite_data[iid].get("left",0)
-            save_invite_data(invite_data)
+            save_invite_data(invite_data)   # <── αποθηκευση αμεσως
             il=bot.get_channel(INVITE_LOG_CHANNEL_ID)
             if il:
                 e=discord.Embed(title="📨 Νέο Invite",description=f"{member.mention} μπήκε με invite του {inviter.mention}",color=discord.Color.green(),timestamp=discord.utils.utcnow())
                 e.add_field(name="📊 Inviter",value=f"**Όνομα:** {inviter.display_name}\n**Συνολικά:** {invite_data[iid].get('total',0)}\n**Real:** {invite_data[iid].get('real',0)}\n**Έφυγαν:** {invite_data[iid].get('left',0)}",inline=False)
-                e.set_thumbnail(url=member.avatar); await il.send(embed=e)
+                e.set_thumbnail(url=member.display_avatar.url); await il.send(embed=e)
+        else:
+            invite_cache[guild.id]=nim
     except Exception as ex: print(f"Invite error: {ex}")
 
     log=bot.get_channel(MEMBER_JOIN_LOG_CHANNEL_ID)
     if log:
-        e=discord.Embed(title="🟢 Member Joined",description=f"{member.mention}",color=discord.Color.green())
-        e.set_thumbnail(url=member.avatar); e.set_footer(text=f"User ID: {member.id}"); await log.send(embed=e)
+        e=discord.Embed(title="🟢 Member Joined",description=f"{member.mention}",color=discord.Color.green(),timestamp=discord.utils.utcnow())
+        e.set_thumbnail(url=member.display_avatar.url); e.set_footer(text=f"User ID: {member.id}"); await log.send(embed=e)
     await update_voice_channels(guild)
 
+# ══════════════════════════════════════════════════════════════
+#  COMMANDS
+# ══════════════════════════════════════════════════════════════
 @bot.command()
 async def ban(ctx,member:discord.Member=None,*,reason="No reason"):
     if not has_staff_permissions(ctx.author): return await ctx.reply("❌ Δεν έχεις δικαίωμα.")
@@ -787,7 +919,48 @@ async def invites(ctx,member:discord.Member=None):
     e.add_field(name="📊 Συνολικά",value=str(d.get("total",0)),inline=True)
     e.add_field(name="✅ Real",value=str(d.get("real",0)),inline=True)
     e.add_field(name="🚪 Έφυγαν",value=str(d.get("left",0)),inline=True)
-    e.set_thumbnail(url=t.avatar); await ctx.reply(embed=e)
+    e.set_thumbnail(url=t.display_avatar.url); await ctx.reply(embed=e)
+
+@bot.command()
+async def serverinvites(ctx):
+    """Εμφανίζει panel με φωτό server και invites όλων των μελών."""
+    if not has_staff_permissions(ctx.author): return await ctx.reply("❌ Δεν έχεις δικαίωμα.")
+    guild=ctx.guild
+    # Φτιαξε λιστα με ατομα που εχουν invites
+    entries=[]
+    for uid,d in invite_data.items():
+        if not isinstance(d,dict): continue
+        total=d.get("total",0)
+        if total<=0: continue
+        member=guild.get_member(int(uid))
+        name=member.display_name if member else f"User {uid}"
+        real=d.get("real",0); left=d.get("left",0)
+        entries.append((name,total,real,left))
+    entries.sort(key=lambda x:x[1],reverse=True)
+
+    e=discord.Embed(
+        title=f"📨 Server Invites — {guild.name}",
+        color=discord.Color.blurple(),
+        timestamp=discord.utils.utcnow()
+    )
+    # Μικρη φωτο server πανω αριστερα
+    if guild.icon:
+        e.set_thumbnail(url=guild.icon.url)
+    # Banner server
+    e.set_image(url=SERVER_BANNER_URL)
+
+    if entries:
+        medals=["🥇","🥈","🥉"]
+        desc=""
+        for i,(name,total,real,left) in enumerate(entries[:20]):
+            medal=medals[i] if i<3 else f"**#{i+1}**"
+            desc+=f"{medal} **{name}** — `{total}` συνολικά | `{real}` real | `{left}` έφυγαν\n"
+        e.description=desc
+    else:
+        e.description="Δεν υπάρχουν δεδομένα invites ακόμα."
+
+    e.set_footer(text=f"Legacy Roleplay • {guild.member_count} μέλη συνολικά")
+    await ctx.send(embed=e)
 
 @bot.command()
 async def serverstatus(ctx):
@@ -817,7 +990,7 @@ async def scan(ctx,member:discord.Member=None):
         e=discord.Embed(title=f"🔍 Scan — {member.display_name}",
             color=discord.Color.dark_red() if (age<ALT_ACCOUNT_AGE_DAYS or member.guild_permissions.administrator) else discord.Color.blurple(),
             timestamp=discord.utils.utcnow())
-        e.set_thumbnail(url=member.avatar.url if member.avatar else None)
+        e.set_thumbnail(url=member.display_avatar.url)
         e.add_field(name="👤 Χρήστης",value=f"{member} (`{member.id}`)",inline=True)
         e.add_field(name="📅 Ηλικία",value=f"{age} ημέρες {'⚠️ Πιθανό ALT' if age<ALT_ACCOUNT_AGE_DAYS else '✅'}",inline=True)
         e.add_field(name="📆 Δημιουργήθηκε",value=f"<t:{int(member.created_at.timestamp())}:F>",inline=True)
@@ -857,16 +1030,51 @@ async def togglealtban(ctx):
     ALT_AUTO_KICK=not ALT_AUTO_KICK
     await ctx.reply(f"Alt auto-kick: {'✅ **Ενεργό**' if ALT_AUTO_KICK else '❌ **Ανενεργό**'}")
 
+# ── !lockapplication ──────────────────────────────────────────
+@bot.command()
+async def lockapplication(ctx, app_type: str = None):
+    """Κλείνει ή ανοίγει αιτήσεις. Χρήση: !lockapplication <whitelist/staff/manager/all>"""
+    if not is_owner_or_coowner(ctx.author): return await ctx.reply("❌ Δεν έχεις δικαίωμα.")
+    valid = ["whitelist","staff","manager","all"]
+    if not app_type or app_type.lower() not in valid:
+        # Δειξε τρεχουσα κατασταση
+        status=""
+        for t in ["whitelist","staff","manager"]:
+            icon="🔒" if t in locked_applications else "🔓"
+            status+=f"{icon} **{t.capitalize()}**\n"
+        e=discord.Embed(title="🔒 Application Lock Status",description=status,color=discord.Color.blurple())
+        e.set_footer(text="Χρήση: !lockapplication <whitelist/staff/manager/all>")
+        return await ctx.reply(embed=e)
+
+    app_type=app_type.lower()
+    if app_type=="all":
+        targets=["whitelist","staff","manager"]
+    else:
+        targets=[app_type]
+
+    toggled=[]
+    for t in targets:
+        if t in locked_applications:
+            locked_applications.remove(t)
+            toggled.append(f"🔓 **{t.capitalize()}** — Ανοιχτό")
+        else:
+            locked_applications.add(t)
+            toggled.append(f"🔒 **{t.capitalize()}** — Κλειστό")
+
+    e=discord.Embed(title="🔒 Application Lock Αλλαγή",description="\n".join(toggled),color=discord.Color.orange(),timestamp=discord.utils.utcnow())
+    e.set_footer(text=f"Από: {ctx.author}")
+    await ctx.reply(embed=e)
+
 @bot.command()
 async def panel(ctx):
     if not is_owner_or_coowner(ctx.author): return await ctx.reply("❌ Δεν έχεις δικαίωμα.")
     e=discord.Embed(title="📌 Legacy Roleplay — Command Panel",color=discord.Color.dark_gray())
     e.add_field(name="🛠 Moderation",value="`!ban` `!kick` `!timeout` `!clearmessage`",inline=False)
-    e.add_field(name="📊 Info",value="`!serverstatus` `!invites [@user]`",inline=False)
+    e.add_field(name="📊 Info",value="`!serverstatus` `!invites [@user]` `!serverinvites`",inline=False)
     e.add_field(name="🧰 Utility",value="`!say` `!dmall`",inline=False)
     e.add_field(name="🔍 Security",value="`!scan [@user]` `!setaltdays <days>` `!togglealtban`",inline=False)
-    e.add_field(name="📋 Applications",value="`!applicationpanel`",inline=False)
-    e.add_field(name="🟢 Duty",value="`!dutypanel` `!dutyleaderboard`",inline=False)
+    e.add_field(name="📋 Applications",value="`!applicationpanel` `!lockapplication <whitelist/staff/manager/all>`",inline=False)
+    e.add_field(name="🟢 Duty",value="`!dutypanel` (Status & Leaderboard κουμπιά)",inline=False)
     e.add_field(name="💡 Suggestions",value="`!suggestionpanel`",inline=False)
     e.add_field(name="⭐ Reviews",value="`!reviewpanel`",inline=False)
     await ctx.reply(embed=e)
@@ -888,7 +1096,13 @@ async def jobpanel(ctx):
 @bot.command()
 async def applicationpanel(ctx):
     if not is_owner_or_coowner(ctx.author): return await ctx.reply("Δεν έχεις δικαίωμα.")
-    e=discord.Embed(title="📋 Legacy Roleplay — Applications",description="**Επίλεξε τύπο αίτησης.**\n\n📋 **Whitelist**\n👮 **Staff**\n👔 **Manager**\n\n*Μία ενεργή αίτηση κάθε φορά.*",color=discord.Color.from_rgb(20,20,40))
+    # Δειξε lock status στο panel
+    lock_info=""
+    for t in ["whitelist","staff","manager"]:
+        lock_info+=f"{'🔒' if t in locked_applications else '🔓'} {t.capitalize()}  "
+    e=discord.Embed(title="📋 Legacy Roleplay — Applications",
+        description=f"**Επίλεξε τύπο αίτησης.**\n\n📋 **Whitelist**\n👮 **Staff**\n👔 **Manager**\n\n*Μία ενεργή αίτηση κάθε φορά.*\n\n{lock_info}",
+        color=discord.Color.from_rgb(20,20,40))
     e.set_image(url=SERVER_BANNER_URL);e.set_thumbnail(url=SERVER_THUMBNAIL_URL);e.set_footer(text="Legacy Roleplay • Applications")
     await ctx.send(embed=e,view=UnifiedApplicationPanel()); await ctx.reply("Panel στάλθηκε.",delete_after=2)
 
@@ -910,12 +1124,12 @@ async def managerpanel(ctx):
 @bot.command()
 async def dutypanel(ctx):
     if not is_owner_or_coowner(ctx.author): return await ctx.reply("Δεν έχεις δικαίωμα.")
-    e=discord.Embed(title="🟢 Staff Duty Panel",description="Πάτα **On Duty** όταν ξεκινάς και **Off Duty** όταν τελειώνεις.",color=discord.Color.green())
+    e=discord.Embed(title="🟢 Staff Duty Panel",
+        description="Πάτα **On Duty** όταν ξεκινάς βάρδια και **Off Duty** όταν τελειώνεις.\n\n"
+                    "📋 **Duty Status** — Δες ποιοι είναι on duty τώρα\n"
+                    "🏆 **Leaderboard** — Δες τις συνολικές ώρες duty",
+        color=discord.Color.green())
     await ctx.send(embed=e,view=DutyView()); await ctx.reply("Panel στάλθηκε.",delete_after=2)
-
-@bot.command()
-async def dutyleaderboard(ctx):
-    await update_duty_leaderboard(ctx.guild); await ctx.reply("✅ Leaderboard ανανεώθηκε.",delete_after=3)
 
 @bot.command()
 async def suggestionpanel(ctx):
@@ -931,6 +1145,9 @@ async def reviewpanel(ctx):
     e.set_image(url=SERVER_BANNER_URL);e.set_thumbnail(url=SERVER_THUMBNAIL_URL);e.set_footer(text="Legacy Roleplay • Review System")
     await ctx.send(embed=e,view=ReviewPanelView()); await ctx.reply("Panel στάλθηκε.",delete_after=2)
 
+# ══════════════════════════════════════════════════════════════
+#  ON READY
+# ══════════════════════════════════════════════════════════════
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
@@ -943,7 +1160,7 @@ async def on_ready():
         try:
             invs=await guild.invites()
             invite_cache[guild.id]={i.code:i.uses for i in invs}
-            print(f"Loaded {len(invs)} invites.")
+            print(f"Loaded {len(invs)} invites into cache.")
         except Exception as e: print(f"Invites error: {e}")
     await bot.change_presence(activity=discord.Game(name="Legacy Roleplay"))
     print("Bot fully online!")
