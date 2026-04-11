@@ -171,31 +171,59 @@ async def on_guild_update(before, after):
 @bot.event
 async def on_voice_state_update(member, before, after):
     guild = member.guild; log = bot.get_channel(VOICE_LOG_CHANNEL_ID)
+
+    # Temp voice channel
     if after.channel and after.channel.id == TEMP_VOICE_CHANNEL_ID:
         cat = guild.get_channel(TEMP_VOICE_CATEGORY_ID)
         tc  = await guild.create_voice_channel(name=f"{member.name}'s Support", category=cat)
         try: await member.move_to(tc)
         except: pass
         if log:
-            e = discord.Embed(title="📞 Support Channel Created", description=f"Created for {member.mention}", color=discord.Color.blue())
-            e.set_footer(text=f"Channel ID: {tc.id}"); await log.send(embed=e)
+            e = discord.Embed(title="📞 Support Channel Created", color=discord.Color.blue(), timestamp=discord.utils.utcnow())
+            e.set_thumbnail(url=member.display_avatar.url)
+            e.add_field(name="👤 Χρήστης", value=f"{member.mention} (`{member.id}`)", inline=True)
+            e.add_field(name="📁 Κανάλι",  value=f"**{tc.name}**", inline=True)
+            e.set_footer(text=f"Legacy Roleplay • Voice Log | Channel ID: {tc.id}")
+            await log.send(embed=e)
+
     if before.channel and before.channel.category_id == TEMP_VOICE_CATEGORY_ID and before.channel.id != TEMP_VOICE_CHANNEL_ID and len(before.channel.members) == 0:
         try:
+            name_copy = before.channel.name
             await before.channel.delete()
             if log:
-                e = discord.Embed(title="🗑️ Support Channel Deleted", description=f"**{before.channel.name}** deleted (empty).", color=discord.Color.red())
+                e = discord.Embed(title="🗑️ Support Channel Deleted", color=discord.Color.red(), timestamp=discord.utils.utcnow())
+                e.add_field(name="📁 Κανάλι", value=f"**{name_copy}**", inline=True)
+                e.add_field(name="📌 Λόγος",  value="Κανένας μέσα", inline=True)
+                e.set_footer(text="Legacy Roleplay • Voice Log")
                 await log.send(embed=e)
         except: pass
+
     if not log: return
+
     if not before.channel and after.channel:
-        e = discord.Embed(title="🔊 Voice Join", description=f"{member.mention} joined **{after.channel.name}**", color=discord.Color.green())
-        e.set_thumbnail(url=member.avatar); e.set_footer(text=f"User ID: {member.id}"); await log.send(embed=e)
+        e = discord.Embed(title="🔊 Voice Join", color=discord.Color.green(), timestamp=discord.utils.utcnow())
+        e.set_thumbnail(url=member.display_avatar.url)
+        e.add_field(name="👤 Χρήστης", value=f"{member.mention} (`{member.id}`)", inline=True)
+        e.add_field(name="🔊 Κανάλι",  value=f"**{after.channel.name}**", inline=True)
+        e.set_footer(text=f"Legacy Roleplay • Voice Log | User ID: {member.id}")
+        await log.send(embed=e)
+
     elif before.channel and not after.channel:
-        e = discord.Embed(title="🔇 Voice Leave", description=f"{member.mention} left **{before.channel.name}**", color=discord.Color.red())
-        e.set_thumbnail(url=member.avatar); e.set_footer(text=f"User ID: {member.id}"); await log.send(embed=e)
+        e = discord.Embed(title="🔇 Voice Leave", color=discord.Color.red(), timestamp=discord.utils.utcnow())
+        e.set_thumbnail(url=member.display_avatar.url)
+        e.add_field(name="👤 Χρήστης", value=f"{member.mention} (`{member.id}`)", inline=True)
+        e.add_field(name="🔇 Κανάλι",  value=f"**{before.channel.name}**", inline=True)
+        e.set_footer(text=f"Legacy Roleplay • Voice Log | User ID: {member.id}")
+        await log.send(embed=e)
+
     elif before.channel != after.channel:
-        e = discord.Embed(title="🔁 Voice Move", description=f"{member.mention} moved from **{before.channel.name}** to **{after.channel.name}**", color=discord.Color.yellow())
-        e.set_thumbnail(url=member.avatar); e.set_footer(text=f"User ID: {member.id}"); await log.send(embed=e)
+        e = discord.Embed(title="🔀 Voice Move", color=discord.Color.yellow(), timestamp=discord.utils.utcnow())
+        e.set_thumbnail(url=member.display_avatar.url)
+        e.add_field(name="👤 Χρήστης", value=f"{member.mention} (`{member.id}`)", inline=False)
+        e.add_field(name="📤 Από",     value=f"**{before.channel.name}**", inline=True)
+        e.add_field(name="📥 Σε",      value=f"**{after.channel.name}**",  inline=True)
+        e.set_footer(text=f"Legacy Roleplay • Voice Log | User ID: {member.id}")
+        await log.send(embed=e)
 
 # ── ROLE LOGS (βελτιωμένα με audit log για ποιος έκανε τι) ────
 @bot.event
@@ -303,27 +331,31 @@ async def on_guild_channel_delete(channel):
 async def on_message_edit(before, after):
     if before.author.bot or before.content == after.content: return
     log = bot.get_channel(MESSAGE_EDIT_LOG_CHANNEL_ID)
-    if log:
-        e = discord.Embed(title="✏️ Message Edited", color=discord.Color.orange(), timestamp=discord.utils.utcnow())
-        e.set_thumbnail(url=before.author.display_avatar.url)
-        e.add_field(name="👤 User",    value=f"{before.author.mention} (`{before.author.id}`)", inline=False)
-        e.add_field(name="📢 Channel", value=before.channel.mention, inline=False)
-        e.add_field(name="📝 Πριν",   value=before.content[:1020] or "None", inline=False)
-        e.add_field(name="📝 Μετά",   value=after.content[:1020] or "None", inline=False)
-        e.add_field(name="🔗 Link",    value=f"[Πήγαινε στο μήνυμα]({after.jump_url})", inline=False)
-        await log.send(embed=e)
+    if not log: return
+    e = discord.Embed(title="✏️ Μήνυμα Επεξεργάστηκε", color=discord.Color.orange(), timestamp=discord.utils.utcnow())
+    e.set_thumbnail(url=before.author.display_avatar.url)
+    e.add_field(name="👤 Χρήστης",  value=f"{before.author.mention} (`{before.author.id}`)", inline=True)
+    e.add_field(name="📢 Κανάλι",  value=before.channel.mention, inline=True)
+    e.add_field(name="📝 Πριν",    value=before.content[:1020] or "*[κενό]*", inline=False)
+    e.add_field(name="📝 Μετά",    value=after.content[:1020]  or "*[κενό]*", inline=False)
+    e.add_field(name="🔗 Link",     value=f"[Πήγαινε στο μήνυμα]({after.jump_url})", inline=False)
+    e.set_footer(text=f"Legacy Roleplay • Message Log | User ID: {before.author.id}")
+    await log.send(embed=e)
 
 @bot.event
 async def on_message_delete(message):
     if message.author.bot: return
     log = bot.get_channel(MESSAGE_DELETE_LOG_CHANNEL_ID)
-    if log:
-        e = discord.Embed(title="🗑️ Message Deleted", color=discord.Color.red(), timestamp=discord.utils.utcnow())
-        e.set_thumbnail(url=message.author.display_avatar.url)
-        e.add_field(name="👤 User",    value=f"{message.author.mention} (`{message.author.id}`)", inline=False)
-        e.add_field(name="📢 Channel", value=message.channel.mention, inline=False)
-        e.add_field(name="📝 Content", value=message.content[:1020] or "None", inline=False)
-        await log.send(embed=e)
+    if not log: return
+    e = discord.Embed(title="🗑️ Μήνυμα Διαγράφηκε", color=discord.Color.red(), timestamp=discord.utils.utcnow())
+    e.set_thumbnail(url=message.author.display_avatar.url)
+    e.add_field(name="👤 Χρήστης",  value=f"{message.author.mention} (`{message.author.id}`)", inline=True)
+    e.add_field(name="📢 Κανάλι",  value=message.channel.mention, inline=True)
+    e.add_field(name="📝 Περιεχόμενο", value=message.content[:1020] or "*[χωρίς κείμενο]*", inline=False)
+    if message.attachments:
+        e.add_field(name="📎 Αρχεία", value="\n".join(a.filename for a in message.attachments), inline=False)
+    e.set_footer(text=f"Legacy Roleplay • Message Log | User ID: {message.author.id}")
+    await log.send(embed=e)
 
 # ══════════════════════════════════════════════════════════════
 #  TICKET SYSTEM
@@ -665,8 +697,15 @@ async def on_member_remove(member):
     await update_voice_channels(member.guild)
     log=bot.get_channel(MEMBER_LEAVE_LOG_CHANNEL_ID)
     if log:
-        e=discord.Embed(title="🔴 Member Left",description=f"{member.mention}",color=discord.Color.red(),timestamp=discord.utils.utcnow())
-        e.set_thumbnail(url=member.display_avatar.url); e.set_footer(text=f"User ID: {member.id}"); await log.send(embed=e)
+        roles=[r.mention for r in member.roles if r.name!="@everyone"]
+        e=discord.Embed(title="🔴 Μέλος Έφυγε", color=discord.Color.red(), timestamp=discord.utils.utcnow())
+        e.set_thumbnail(url=member.display_avatar.url)
+        e.add_field(name="👤 Χρήστης",    value=f"{member.mention} (`{member.id}`)", inline=True)
+        e.add_field(name="📛 Username",    value=str(member), inline=True)
+        e.add_field(name="👥 Μέλη τώρα",  value=str(member.guild.member_count), inline=True)
+        e.add_field(name="🎭 Ρόλοι",      value=" ".join(roles) if roles else "Κανένας", inline=False)
+        e.set_footer(text=f"Legacy Roleplay • Member Log | User ID: {member.id}")
+        await log.send(embed=e)
 
 async def _track_mass_action(guild,moderator,action_type):
     uid=str(moderator.id) if hasattr(moderator,"id") else str(moderator); now=time.time()
@@ -857,8 +896,14 @@ async def on_member_join(member):
 
     log=bot.get_channel(MEMBER_JOIN_LOG_CHANNEL_ID)
     if log:
-        e=discord.Embed(title="🟢 Member Joined",description=f"{member.mention}",color=discord.Color.green(),timestamp=discord.utils.utcnow())
-        e.set_thumbnail(url=member.display_avatar.url); e.set_footer(text=f"User ID: {member.id}"); await log.send(embed=e)
+        e=discord.Embed(title="🟢 Μέλος Μπήκε", color=discord.Color.green(), timestamp=discord.utils.utcnow())
+        e.set_thumbnail(url=member.display_avatar.url)
+        e.add_field(name="👤 Χρήστης",       value=f"{member.mention} (`{member.id}`)", inline=True)
+        e.add_field(name="📛 Username",       value=str(member), inline=True)
+        e.add_field(name="📅 Λογαριασμός",   value=f"<t:{int(member.created_at.timestamp())}:R>", inline=True)
+        e.add_field(name="👥 Μέλη τώρα",     value=str(guild.member_count), inline=True)
+        e.set_footer(text=f"Legacy Roleplay • Member Log | User ID: {member.id}")
+        await log.send(embed=e)
     await update_voice_channels(guild)
 
 # ══════════════════════════════════════════════════════════════
