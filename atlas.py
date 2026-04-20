@@ -85,7 +85,7 @@ BANNER_SUPPORT  = "https://i.imgur.com/LLCEPEA.jpeg"
 BANNER_JOB      = "https://i.imgur.com/xpyHm5F.jpeg"
 BANNER_APP      = "https://i.imgur.com/rWPJXPB.jpeg"
 BANNER_SUGGEST  = "https://i.imgur.com/nDd2fSg.jpeg"
-BANNER_REVIEW   = "https://i.imgur.com/W92QASR.jpeg"
+BANNER_REVIEW   = "https://i.imgur.com/KO7zcwu.jpeg"
 BANNER_DONATE   = "https://i.imgur.com/acLOxgM.jpeg"
 
 WHITELIST_QUESTIONS = [
@@ -1319,7 +1319,7 @@ async def dutypanel(ctx):
     e=discord.Embed(title="🟢 Staff Duty Panel",
         description="Πάτα **On Duty** όταν ξεκινάς βάρδια και **Off Duty** όταν τελειώνεις.\n\n"
                     "📋 **Duty Status** — Δες ποιοι είναι on duty τώρα\n"
-                    "🏆 **Leaderboard** — Συνολικές ώρες (δεν επαναφέρονται ποτέ)",
+                    "🏆 **Leaderboard** — Συνολικές ώρες",
         color=discord.Color.green())
     await ctx.send(embed=e, view=DutyView()); await ctx.reply("Panel στάλθηκε.", delete_after=2)
 
