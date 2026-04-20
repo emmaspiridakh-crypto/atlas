@@ -35,9 +35,8 @@ JOBORG_ID              = 1490338701799194767
 APPLICATION_MANAGER_ID = 1490134509830803507
 DUTY_ROLE_ID           = 1490338840395649266
 AUTOROLE_ID            = 1490134521687969864
-DONATE_MANAGER_ID      = 1490134506793861193  # Αλλαξε με το ID του Donate Manager role σου
+DONATE_MANAGER_ID      = 1490134506793861193
 
-# ── CHANNEL IDs ───────────────────────────────────────────────
 WHITELIST_MANAGER_ROLE_ID    = 1490339511186489437
 WHITELIST_ROLE_ID            = 1490339131341930577
 STAFF_APP_ROLE_ID            = 1490134518768730204
@@ -57,7 +56,7 @@ INVITE_LOG_CHANNEL_ID        = 1490493231107145820
 
 MAIN_TICKET_CATEGORY_ID   = 1490134558182473959
 JOB_TICKET_CATEGORY_ID    = 1490134559315197992
-DONATE_TICKET_CATEGORY_ID = 1495232331131125791  # Αλλαξε με το ID της κατηγορίας donate tickets
+DONATE_TICKET_CATEGORY_ID = 1495232331131125791
 TEMP_VOICE_CATEGORY_ID    = 1490134557272313947
 TEMP_VOICE_CHANNEL_ID     = 1490134590608642179
 
@@ -81,17 +80,14 @@ BOOSTS_CHANNEL_ID  = 1490134571147071538
 
 APPLICATION_MANAGER_ROLES = [FOUNDER_ROLE_ID, OWNER_ID, CO_OWNER_ID, WHITELIST_MANAGER_ROLE_ID, APPLICATION_MANAGER_ID]
 
-# ── PANEL IMAGES (διαφορετικες φωτογραφιες για καθε panel) ───
 SERVER_THUMBNAIL_URL = "https://i.imgur.com/SUpJpRb.png"
+BANNER_SUPPORT  = "https://i.imgur.com/LLCEPEA.jpeg"
+BANNER_JOB      = "https://i.imgur.com/xpyHm5F.jpeg"
+BANNER_APP      = "https://i.imgur.com/rWPJXPB.jpeg"
+BANNER_SUGGEST  = "https://i.imgur.com/nDd2fSg.jpeg"
+BANNER_REVIEW   = "https://i.imgur.com/W92QASR.jpeg"
+BANNER_DONATE   = "https://i.imgur.com/acLOxgM.jpeg"
 
-BANNER_SUPPORT  = "https://i.imgur.com/jPciDd1.jpeg"  
-BANNER_JOB      = "https://i.imgur.com/HaLtnLx.jpeg"   
-BANNER_APP      = "https://i.imgur.com/2rUo7IZ.jpeg"   
-BANNER_SUGGEST  = "https://i.imgur.com/nDd2fSg.jpeg"   
-BANNER_REVIEW   = "https://i.imgur.com/pAA8KfT.jpeg"   
-BANNER_DONATE   = "https://i.imgur.com/kDUuO8t.jpeg"   
-
-# ── QUESTIONS ─────────────────────────────────────────────────
 WHITELIST_QUESTIONS = [
     "Ποιο είναι το όνομα στο roblox και η ηλικία σου (IRL);",
     "Δώσε μια σύντομη περιγραφή του χαρακτήρα σου in game.",
@@ -119,11 +115,20 @@ MANAGER_QUESTIONS = [
 ]
 
 # ── PERMISSION HELPERS ────────────────────────────────────────
+# Founder: ολα τα commands
+# Owner/Co-Owner: say, say2, moderation, info
+# Staff/Manager: moderation, info
+
 def is_founder(u):
     return any(r.id == FOUNDER_ROLE_ID for r in u.roles)
 
+def is_owner_or_above(u):
+    """Owner, Co-Owner, Founder"""
+    return any(r.id in (FOUNDER_ROLE_ID, OWNER_ID, CO_OWNER_ID) for r in u.roles)
+
 def is_owner_or_founder(u):
-    return any(r.id in (FOUNDER_ROLE_ID, OWNER_ID) for r in u.roles)
+    """Owner + Founder (για say/say2)"""
+    return any(r.id in (FOUNDER_ROLE_ID, OWNER_ID, CO_OWNER_ID) for r in u.roles)
 
 def is_owner_or_coowner(u):
     return any(r.id in (FOUNDER_ROLE_ID, OWNER_ID, CO_OWNER_ID) for r in u.roles)
@@ -143,15 +148,15 @@ DUTY_FILE = "duty.json"
 def load_duty_data():
     if not os.path.exists(DUTY_FILE): open(DUTY_FILE,"w").write("{}")
     return json.load(open(DUTY_FILE))
-def save_duty_data(d): json.dump(d,open(DUTY_FILE,"w"),indent=4)
+def save_duty_data(d): json.dump(d, open(DUTY_FILE,"w"), indent=4)
 duty_data = load_duty_data()
 
 SECURITY_FILE = "security.json"
 def load_security_data():
     if not os.path.exists(SECURITY_FILE):
-        json.dump({"spam":{},"ban_kick_tracker":{},"alts":[]},open(SECURITY_FILE,"w"))
+        json.dump({"spam":{},"ban_kick_tracker":{},"alts":[]}, open(SECURITY_FILE,"w"))
     return json.load(open(SECURITY_FILE))
-def save_security_data(d): json.dump(d,open(SECURITY_FILE,"w"),indent=4)
+def save_security_data(d): json.dump(d, open(SECURITY_FILE,"w"), indent=4)
 security_data = load_security_data()
 
 ALT_ACCOUNT_AGE_DAYS = 30
@@ -166,7 +171,7 @@ INVITE_FILE = "invites.json"
 def load_invite_data():
     if not os.path.exists(INVITE_FILE): open(INVITE_FILE,"w").write("{}")
     return json.load(open(INVITE_FILE))
-def save_invite_data(d): json.dump(d,open(INVITE_FILE,"w"),indent=4)
+def save_invite_data(d): json.dump(d, open(INVITE_FILE,"w"), indent=4)
 invite_data  = load_invite_data()
 invite_cache = {}
 
@@ -199,10 +204,8 @@ async def on_guild_update(before, after):
         await update_voice_channels(after)
 
 # ══════════════════════════════════════════════════════════════
-#  LOGS — ολα με ιδια μορφη embed
+#  LOGS
 # ══════════════════════════════════════════════════════════════
-
-# ── VOICE LOGS ────────────────────────────────────────────────
 @bot.event
 async def on_voice_state_update(member, before, after):
     guild = member.guild
@@ -260,7 +263,6 @@ async def on_voice_state_update(member, before, after):
         e.set_footer(text=f"Legacy Roleplay • Voice Log | User ID: {member.id}")
         await log.send(embed=e)
 
-# ── ROLE LOGS ─────────────────────────────────────────────────
 @bot.event
 async def on_guild_role_create(role):
     log = bot.get_channel(ROLE_CREATE_LOG_CHANNEL_ID)
@@ -271,10 +273,10 @@ async def on_guild_role_create(role):
             moderator = entry.user.mention; break
     except: pass
     e = discord.Embed(title="🆕 Ρόλος Δημιουργήθηκε", color=discord.Color.green(), timestamp=discord.utils.utcnow())
-    e.add_field(name="📛 Όνομα",   value=f"**{role.name}**",  inline=True)
-    e.add_field(name="🎨 Χρώμα",  value=str(role.color),      inline=True)
-    e.add_field(name="👤 Από",     value=moderator,            inline=True)
-    e.add_field(name="🆔 Role ID", value=f"`{role.id}`",       inline=True)
+    e.add_field(name="📛 Όνομα",   value=f"**{role.name}**", inline=True)
+    e.add_field(name="🎨 Χρώμα",  value=str(role.color),     inline=True)
+    e.add_field(name="👤 Από",     value=moderator,           inline=True)
+    e.add_field(name="🆔 Role ID", value=f"`{role.id}`",      inline=True)
     e.set_footer(text="Legacy Roleplay • Role Log")
     await log.send(embed=e)
 
@@ -305,9 +307,9 @@ async def on_member_update(before, after):
             if entry.target.id == after.id:
                 e = discord.Embed(title="➕ Role Added", color=discord.Color.green(), timestamp=discord.utils.utcnow())
                 e.set_thumbnail(url=after.display_avatar.url)
-                e.add_field(name="👤 Χρήστης",   value=f"{after.mention} (`{after.id}`)",  inline=True)
-                e.add_field(name="🎭 Ρόλος",     value=f"**{new_role.name}**",              inline=True)
-                e.add_field(name="🛡️ Moderator", value=entry.user.mention,                 inline=True)
+                e.add_field(name="👤 Χρήστης",   value=f"{after.mention} (`{after.id}`)", inline=True)
+                e.add_field(name="🎭 Ρόλος",     value=f"**{new_role.name}**",            inline=True)
+                e.add_field(name="🛡️ Moderator", value=entry.user.mention,               inline=True)
                 e.set_footer(text=f"Legacy Roleplay • Role Log | Role ID: {new_role.id}")
                 await log.send(embed=e); break
     elif len(after.roles) < len(before.roles):
@@ -318,11 +320,10 @@ async def on_member_update(before, after):
                 e.set_thumbnail(url=after.display_avatar.url)
                 e.add_field(name="👤 Χρήστης",   value=f"{after.mention} (`{after.id}`)", inline=True)
                 e.add_field(name="🎭 Ρόλος",     value=f"**{removed.name}**",             inline=True)
-                e.add_field(name="🛡️ Moderator", value=entry.user.mention,                inline=True)
+                e.add_field(name="🛡️ Moderator", value=entry.user.mention,               inline=True)
                 e.set_footer(text=f"Legacy Roleplay • Role Log | Role ID: {removed.id}")
                 await log.send(embed=e); break
 
-# ── CHANNEL LOGS ──────────────────────────────────────────────
 @bot.event
 async def on_guild_channel_create(channel):
     log = bot.get_channel(CHANNEL_CREATE_LOG_CHANNEL_ID)
@@ -333,12 +334,12 @@ async def on_guild_channel_create(channel):
             moderator = entry.user.mention; break
     except: pass
     e = discord.Embed(title="📁 Κανάλι Δημιουργήθηκε", color=discord.Color.green(), timestamp=discord.utils.utcnow())
-    e.add_field(name="📛 Όνομα",      value=f"**{channel.name}**",           inline=True)
-    e.add_field(name="📂 Τύπος",     value=str(channel.type).capitalize(),   inline=True)
-    e.add_field(name="👤 Από",        value=moderator,                        inline=True)
+    e.add_field(name="📛 Όνομα",     value=f"**{channel.name}**",         inline=True)
+    e.add_field(name="📂 Τύπος",    value=str(channel.type).capitalize(), inline=True)
+    e.add_field(name="👤 Από",       value=moderator,                      inline=True)
     if hasattr(channel, "category") and channel.category:
-        e.add_field(name="🗂️ Κατηγορία", value=channel.category.name,       inline=True)
-    e.add_field(name="🆔 Channel ID", value=f"`{channel.id}`",               inline=True)
+        e.add_field(name="🗂️ Κατηγορία", value=channel.category.name,   inline=True)
+    e.add_field(name="🆔 Channel ID", value=f"`{channel.id}`",            inline=True)
     e.set_footer(text="Legacy Roleplay • Channel Log")
     await log.send(embed=e)
 
@@ -352,14 +353,13 @@ async def on_guild_channel_delete(channel):
             moderator = entry.user.mention; break
     except: pass
     e = discord.Embed(title="🗑️ Κανάλι Διαγράφηκε", color=discord.Color.red(), timestamp=discord.utils.utcnow())
-    e.add_field(name="📛 Όνομα",      value=f"**{channel.name}**",          inline=True)
-    e.add_field(name="📂 Τύπος",     value=str(channel.type).capitalize(),  inline=True)
-    e.add_field(name="👤 Από",        value=moderator,                       inline=True)
-    e.add_field(name="🆔 Channel ID", value=f"`{channel.id}`",              inline=True)
+    e.add_field(name="📛 Όνομα",     value=f"**{channel.name}**",         inline=True)
+    e.add_field(name="📂 Τύπος",    value=str(channel.type).capitalize(), inline=True)
+    e.add_field(name="👤 Από",       value=moderator,                      inline=True)
+    e.add_field(name="🆔 Channel ID", value=f"`{channel.id}`",            inline=True)
     e.set_footer(text="Legacy Roleplay • Channel Log")
     await log.send(embed=e)
 
-# ── MESSAGE LOGS ──────────────────────────────────────────────
 @bot.event
 async def on_message_edit(before, after):
     if before.author.bot or before.content == after.content: return
@@ -382,16 +382,13 @@ async def on_message_delete(message):
     if not log: return
     e = discord.Embed(title="🗑️ Μήνυμα Διαγράφηκε", color=discord.Color.red(), timestamp=discord.utils.utcnow())
     e.set_thumbnail(url=message.author.display_avatar.url)
-    e.add_field(name="👤 Χρήστης",      value=f"{message.author.mention} (`{message.author.id}`)", inline=True)
-    e.add_field(name="📢 Κανάλι",       value=message.channel.mention, inline=True)
-    e.add_field(name="📝 Περιεχόμενο",  value=message.content[:1020] or "*[χωρίς κείμενο]*", inline=False)
+    e.add_field(name="👤 Χρήστης",     value=f"{message.author.mention} (`{message.author.id}`)", inline=True)
+    e.add_field(name="📢 Κανάλι",      value=message.channel.mention, inline=True)
+    e.add_field(name="📝 Περιεχόμενο", value=message.content[:1020] or "*[χωρίς κείμενο]*", inline=False)
     if message.attachments:
         e.add_field(name="📎 Αρχεία", value="\n".join(a.filename for a in message.attachments), inline=False)
     e.set_footer(text=f"Legacy Roleplay • Message Log | User ID: {message.author.id}")
     await log.send(embed=e)
-
-# ── MEMBER JOIN/LEAVE LOGS ────────────────────────────────────
-# (τα χειριζεται το on_member_join και on_member_remove παρακατω)
 
 # ══════════════════════════════════════════════════════════════
 #  TICKET SYSTEM
@@ -415,38 +412,36 @@ class TicketCloseView(discord.ui.View):
 
 class MainTicketSelect(discord.ui.Select):
     def __init__(self):
-        opts = [discord.SelectOption(label="Owner",   description="Επικοινωνία με Owner",  emoji="👑"),
-                discord.SelectOption(label="Bug",     description="Αναφορά bug",            emoji="🐞"),
-                discord.SelectOption(label="Report",  description="Αναφορά παίκτη",         emoji="📙"),
-                discord.SelectOption(label="Support", description="Γενική υποστήριξη",      emoji="💬")]
+        opts = [discord.SelectOption(label="Owner",   description="Επικοινωνία με Owner", emoji="👑"),
+                discord.SelectOption(label="Bug",     description="Αναφορά bug",           emoji="🐞"),
+                discord.SelectOption(label="Report",  description="Αναφορά παίκτη",        emoji="📙"),
+                discord.SelectOption(label="Support", description="Γενική υποστήριξη",     emoji="💬")]
         super().__init__(custom_id="main_ticket_select", placeholder="Make a selection", min_values=1, max_values=1, options=opts)
 
     async def callback(self, interaction):
         guild=interaction.guild; author=interaction.user
         cat=guild.get_channel(MAIN_TICKET_CATEGORY_ID)
         if not cat: return await interaction.response.send_message("Κατηγορία δεν βρέθηκε.", ephemeral=True)
-        ow = {
-            guild.default_role: discord.PermissionOverwrite(view_channel=False),
-            author: discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
-        }
-        v = self.values[0]
-        if v=="Owner":   rids=[OWNER_ID,CO_OWNER_ID,FOUNDER_ROLE_ID]; name=f"owner-{author.name}".replace(" ","-").lower();   tt="Owner Ticket"
-        elif v=="Bug":   rids=[DEVELOPER_ID,OWNER_ID,CO_OWNER_ID,FOUNDER_ROLE_ID]; name=f"bug-{author.name}".replace(" ","-").lower();     tt="Bug Report"
-        elif v=="Report":rids=[MANAGER_ID,OWNER_ID,CO_OWNER_ID,FOUNDER_ROLE_ID]; name=f"report-{author.name}".replace(" ","-").lower();   tt="Report"
-        else:            rids=[STAFF_ID,OWNER_ID,CO_OWNER_ID,FOUNDER_ROLE_ID]; name=f"support-{author.name}".replace(" ","-").lower(); tt="Support"
+        ow={guild.default_role: discord.PermissionOverwrite(view_channel=False),
+            author: discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)}
+        v=self.values[0]
+        if v=="Owner":    rids=[OWNER_ID,CO_OWNER_ID,FOUNDER_ROLE_ID]; name=f"owner-{author.name}".replace(" ","-").lower();   tt="Owner Ticket"
+        elif v=="Bug":    rids=[DEVELOPER_ID,OWNER_ID,CO_OWNER_ID,FOUNDER_ROLE_ID]; name=f"bug-{author.name}".replace(" ","-").lower();   tt="Bug Report"
+        elif v=="Report": rids=[MANAGER_ID,OWNER_ID,CO_OWNER_ID,FOUNDER_ROLE_ID]; name=f"report-{author.name}".replace(" ","-").lower(); tt="Report"
+        else:             rids=[STAFF_ID,OWNER_ID,CO_OWNER_ID,FOUNDER_ROLE_ID]; name=f"support-{author.name}".replace(" ","-").lower(); tt="Support"
         for rid in rids:
             r=guild.get_role(rid)
             if r: ow[r]=discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
-        ch = await guild.create_text_channel(name=name, category=cat, overwrites=ow)
-        e = discord.Embed(title=f"🎫 {tt}",
+        ch=await guild.create_text_channel(name=name, category=cat, overwrites=ow)
+        e=discord.Embed(title=f"🎫 {tt}",
             description=f"Γεια σου {author.mention}!\n\n**Το staff θα σε εξυπηρετήσει σύντομα.**\nΠαρακαλώ περίγραψε το αίτημά σου.\n\n*One active ticket at a time.*",
             color=discord.Color.from_rgb(20,20,40))
         e.set_image(url=BANNER_SUPPORT); e.set_thumbnail(url=SERVER_THUMBNAIL_URL)
         e.set_footer(text="Legacy Roleplay • Support System")
         await ch.send(embed=e, view=TicketCloseView())
-        lc = guild.get_channel(TICKET_LOG_ID)
+        lc=guild.get_channel(TICKET_LOG_ID)
         if lc:
-            le = discord.Embed(title="📂 Νέο Ticket", color=discord.Color.blue(), timestamp=discord.utils.utcnow())
+            le=discord.Embed(title="📂 Νέο Ticket", color=discord.Color.blue(), timestamp=discord.utils.utcnow())
             le.set_thumbnail(url=author.display_avatar.url)
             le.add_field(name="👤 Από",    value=author.mention, inline=True)
             le.add_field(name="📋 Τύπος", value=tt,             inline=True)
@@ -458,27 +453,24 @@ class MainTicketSelect(discord.ui.Select):
 class MainTicketPanel(discord.ui.View):
     def __init__(self): super().__init__(timeout=None); self.add_item(MainTicketSelect())
 
-# ── JOB TICKET ────────────────────────────────────────────────
 class JobTicketSelect(discord.ui.Select):
     def __init__(self):
-        opts = [discord.SelectOption(label="Civilian Job", description="Αίτηση για civilian", emoji="👮"),
-                discord.SelectOption(label="Criminal Job", description="Αίτηση για criminal", emoji="🕵️")]
+        opts=[discord.SelectOption(label="Civilian Job", description="Αίτηση για civilian", emoji="👮"),
+              discord.SelectOption(label="Criminal Job", description="Αίτηση για criminal", emoji="🕵️")]
         super().__init__(custom_id="job_ticket_select", placeholder="Make a selection", min_values=1, max_values=1, options=opts)
 
     async def callback(self, interaction):
         guild=interaction.guild; author=interaction.user
         cat=guild.get_channel(JOB_TICKET_CATEGORY_ID)
         if not cat: return await interaction.response.send_message("Κατηγορία δεν βρέθηκε.", ephemeral=True)
-        ow = {
-            guild.default_role: discord.PermissionOverwrite(view_channel=False),
-            author: discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
-        }
+        ow={guild.default_role: discord.PermissionOverwrite(view_channel=False),
+            author: discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)}
         v=self.values[0]; tt="Civilian Job" if v=="Civilian Job" else "Criminal Job"
         name=f"{'civilian' if v=='Civilian Job' else 'criminal'}-{author.name}".replace(" ","-").lower()
         r=guild.get_role(JOBORG_ID)
         if r: ow[r]=discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
-        ch = await guild.create_text_channel(name=name, category=cat, overwrites=ow)
-        e = discord.Embed(title=f"🎫 {tt}",
+        ch=await guild.create_text_channel(name=name, category=cat, overwrites=ow)
+        e=discord.Embed(title=f"🎫 {tt}",
             description=f"Γεια σου {author.mention}!\n\n**Job Manager θα σε εξυπηρετήσει.**\n\n*One active ticket at a time.*",
             color=discord.Color.from_rgb(20,20,40))
         e.set_image(url=BANNER_JOB); e.set_thumbnail(url=SERVER_THUMBNAIL_URL)
@@ -486,7 +478,7 @@ class JobTicketSelect(discord.ui.Select):
         await ch.send(embed=e, view=TicketCloseView())
         lc=guild.get_channel(TICKET_LOG_ID)
         if lc:
-            le = discord.Embed(title="📂 Νέο Job Ticket", color=discord.Color.blue(), timestamp=discord.utils.utcnow())
+            le=discord.Embed(title="📂 Νέο Job Ticket", color=discord.Color.blue(), timestamp=discord.utils.utcnow())
             le.set_thumbnail(url=author.display_avatar.url)
             le.add_field(name="👤 Από",    value=author.mention, inline=True)
             le.add_field(name="📋 Τύπος", value=tt,             inline=True)
@@ -498,26 +490,23 @@ class JobTicketSelect(discord.ui.Select):
 class JobTicketPanel(discord.ui.View):
     def __init__(self): super().__init__(timeout=None); self.add_item(JobTicketSelect())
 
-# ── DONATE TICKET ─────────────────────────────────────────────
 class DonateTicketSelect(discord.ui.Select):
     def __init__(self):
-        opts = [discord.SelectOption(label="Make a Donate", description="Κάνε donate στον server", emoji="💎")]
+        opts=[discord.SelectOption(label="Make a Donate", description="Κάνε donate στον server", emoji="💎")]
         super().__init__(custom_id="donate_ticket_select", placeholder="Επίλεξε κατηγορία...", min_values=1, max_values=1, options=opts)
 
     async def callback(self, interaction):
         guild=interaction.guild; author=interaction.user
         cat=guild.get_channel(DONATE_TICKET_CATEGORY_ID)
         if not cat: return await interaction.response.send_message("Κατηγορία δεν βρέθηκε.", ephemeral=True)
-        ow = {
-            guild.default_role: discord.PermissionOverwrite(view_channel=False),
-            author: discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
-        }
+        ow={guild.default_role: discord.PermissionOverwrite(view_channel=False),
+            author: discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)}
         for rid in [FOUNDER_ROLE_ID, OWNER_ID, DONATE_MANAGER_ID]:
             r=guild.get_role(rid)
             if r: ow[r]=discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
-        name = f"donate-{author.name}".replace(" ","-").lower()
-        ch = await guild.create_text_channel(name=name, category=cat, overwrites=ow)
-        e = discord.Embed(title="💎 Donate Ticket",
+        name=f"donate-{author.name}".replace(" ","-").lower()
+        ch=await guild.create_text_channel(name=name, category=cat, overwrites=ow)
+        e=discord.Embed(title="💎 Donate Ticket",
             description=(f"Γεια σου {author.mention}!\n\n"
                          "**Ευχαριστούμε για το ενδιαφέρον σου να κάνεις donate!**\n\n"
                          "Παρακαλώ περίγραψε τι donate θέλεις να κάνεις και ένας από την ομάδα μας θα σε εξυπηρετήσει σύντομα.\n\n"
@@ -528,7 +517,7 @@ class DonateTicketSelect(discord.ui.Select):
         await ch.send(embed=e, view=TicketCloseView())
         lc=guild.get_channel(TICKET_LOG_ID)
         if lc:
-            le = discord.Embed(title="💎 Νέο Donate Ticket", color=discord.Color.gold(), timestamp=discord.utils.utcnow())
+            le=discord.Embed(title="💎 Νέο Donate Ticket", color=discord.Color.gold(), timestamp=discord.utils.utcnow())
             le.set_thumbnail(url=author.display_avatar.url)
             le.add_field(name="👤 Από",    value=author.mention, inline=True)
             le.add_field(name="📁 Κανάλι",value=ch.mention,     inline=True)
@@ -655,8 +644,8 @@ class ApplicationSelect(discord.ui.Select):
         cat=guild.get_channel(cat_id); cname=f"{app}-{author.name}".replace(" ","-").lower()
         ex=discord.utils.get(guild.text_channels, name=cname)
         if ex: return await interaction.response.send_message(f"Έχεις ήδη: {ex.mention}", ephemeral=True)
-        ow={guild.default_role:discord.PermissionOverwrite(view_channel=False),
-            author:discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)}
+        ow={guild.default_role: discord.PermissionOverwrite(view_channel=False),
+            author: discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)}
         for rid in APPLICATION_MANAGER_ROLES:
             r=guild.get_role(rid)
             if r: ow[r]=discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
@@ -673,8 +662,17 @@ class UnifiedApplicationPanel(discord.ui.View):
     def __init__(self): super().__init__(timeout=None); self.add_item(ApplicationSelect())
 
 # ══════════════════════════════════════════════════════════════
-#  DUTY SYSTEM
+#  DUTY SYSTEM — persistent leaderboard
 # ══════════════════════════════════════════════════════════════
+def get_total_seconds(uid: str, now: float) -> float:
+    """Επιστρέφει συνολικά δευτερόλεπτα duty (αποθηκευμένα + τρέχουσα session αν είναι on duty)."""
+    d = duty_data.get(uid, {})
+    if not isinstance(d, dict): return 0.0
+    total = d.get("total_seconds", 0.0)
+    if "start_time" in d:
+        total += now - d["start_time"]
+    return total
+
 class DutyView(discord.ui.View):
     def __init__(self): super().__init__(timeout=None)
 
@@ -685,7 +683,11 @@ class DutyView(discord.ui.View):
         if dr:
             try: await interaction.user.add_roles(dr)
             except: pass
-        duty_data[uid]=duty_data.get(uid,{"total_seconds":0}); duty_data[uid]["start_time"]=time.time(); save_duty_data(duty_data)
+        # Διατηρούμε τα υπάρχοντα total_seconds, απλά βάζουμε νέο start_time
+        if uid not in duty_data or not isinstance(duty_data[uid], dict):
+            duty_data[uid] = {"total_seconds": 0.0}
+        duty_data[uid]["start_time"] = time.time()
+        save_duty_data(duty_data)
         log=bot.get_channel(DUTY_LOG_CHANNEL_ID)
         if log:
             e=discord.Embed(title="🟢 On Duty", description=f"{interaction.user.mention} μπήκε On Duty.", color=discord.Color.green(), timestamp=discord.utils.utcnow())
@@ -701,20 +703,26 @@ class DutyView(discord.ui.View):
         if dr:
             try: await interaction.user.remove_roles(dr)
             except: pass
-        ss=0
-        if uid in duty_data and "start_time" in duty_data[uid]:
-            ss=time.time()-duty_data[uid]["start_time"]
-            duty_data[uid]["total_seconds"]=duty_data[uid].get("total_seconds",0)+ss
-            duty_data[uid].pop("start_time",None); save_duty_data(duty_data)
+        ss=0.0
+        if uid in duty_data and isinstance(duty_data[uid], dict) and "start_time" in duty_data[uid]:
+            ss = time.time() - duty_data[uid]["start_time"]
+            # ΠΡΟΣΘΕΤΟΥΜΕ στο total_seconds — ποτέ δεν κάνουμε reset
+            duty_data[uid]["total_seconds"] = duty_data[uid].get("total_seconds", 0.0) + ss
+            duty_data[uid].pop("start_time", None)
+            save_duty_data(duty_data)
         h,r=divmod(int(ss),3600); m,s2=divmod(r,60); ds=f"{h}ω {m}λ {s2}δ"
+        # Συνολικός χρόνος
+        total = duty_data.get(uid,{}).get("total_seconds",0.0)
+        th,tr=divmod(int(total),3600); tm2,_=divmod(tr,60)
         log=bot.get_channel(DUTY_LOG_CHANNEL_ID)
         if log:
             e=discord.Embed(title="🔴 Off Duty", description=f"{interaction.user.mention} βγήκε Off Duty.", color=discord.Color.red(), timestamp=discord.utils.utcnow())
             e.set_thumbnail(url=interaction.user.display_avatar.url)
-            e.add_field(name="⏱ Session", value=ds, inline=True)
+            e.add_field(name="⏱ Session",  value=ds,                     inline=True)
+            e.add_field(name="📊 Σύνολο",  value=f"{th}ω {tm2}λ",        inline=True)
             e.set_footer(text=f"Legacy Roleplay • Duty Log | User ID: {interaction.user.id}")
             await log.send(embed=e)
-        await interaction.response.send_message(f"✅ Off Duty! Ήσουν on για **{ds}**.", ephemeral=True)
+        await interaction.response.send_message(f"✅ Off Duty! Session: **{ds}** | Σύνολο: **{th}ω {tm2}λ**", ephemeral=True)
 
     @discord.ui.button(label="📋 Duty Status", style=discord.ButtonStyle.blurple, custom_id="duty_status", row=1)
     async def duty_status(self, interaction, button):
@@ -736,17 +744,19 @@ class DutyView(discord.ui.View):
             e.set_footer(text=f"{len(on_duty_members)} άτομα on duty | Legacy Roleplay")
         else:
             e.description="❌ Κανένας δεν είναι On Duty αυτή τη στιγμή."
+            e.set_footer(text="Legacy Roleplay • Duty Status")
         await interaction.response.send_message(embed=e, ephemeral=True)
 
     @discord.ui.button(label="🏆 Leaderboard", style=discord.ButtonStyle.grey, custom_id="duty_leaderboard_btn", row=1)
     async def leaderboard_btn(self, interaction, button):
         guild=interaction.guild; now=time.time()
+        # Υπολογισε total seconds για καθε χρηστη (persistent — δεν κανει ποτε reset)
         totals=[]
         for uid,d in duty_data.items():
             if not isinstance(d,dict): continue
-            total=d.get("total_seconds",0)
-            if "start_time" in d: total+=now-d["start_time"]
-            totals.append((uid,total))
+            total=get_total_seconds(uid, now)
+            if total > 0:
+                totals.append((uid,total))
         totals.sort(key=lambda x:x[1], reverse=True)
         medals=["🥇","🥈","🥉"]
         e=discord.Embed(title="🏆 Duty Leaderboard", color=discord.Color.gold(), timestamp=discord.utils.utcnow())
@@ -759,7 +769,7 @@ class DutyView(discord.ui.View):
             is_on=" 🟢" if (member and dr and dr in member.roles) else ""
             desc+=f"{medal} {name}{is_on} — `{h}ω {mn}λ`\n"
         e.description=desc or "Κανένας δεν έχει κάνει duty ακόμα."
-        e.set_footer(text="🟢 = Τώρα on duty | Legacy Roleplay")
+        e.set_footer(text="🟢 = Τώρα on duty • Οι χρόνοι δεν επαναφέρονται ποτέ | Legacy Roleplay")
         await interaction.response.send_message(embed=e, ephemeral=True)
 
 # ══════════════════════════════════════════════════════════════
@@ -837,7 +847,7 @@ async def _track_mass_action(guild, moderator, action_type):
             await send_security_alert(guild, e, ping=True)
 
 # ══════════════════════════════════════════════════════════════
-#  SUGGESTION & REVIEW SYSTEM
+#  SUGGESTION & REVIEW
 # ══════════════════════════════════════════════════════════════
 class SuggestionModal(discord.ui.Modal, title="💡 Make a Suggestion"):
     suggestion_input=discord.ui.TextInput(label="Η πρότασή σου", style=discord.TextStyle.paragraph, placeholder="Γράψε εδώ...", required=True, max_length=1000)
@@ -864,18 +874,19 @@ class ReviewModal(discord.ui.Modal, title="⭐ Make a Review"):
         sd="⭐"*self.stars+"☆"*(5-self.stars)
         cm={1:discord.Color.red(),2:discord.Color.orange(),3:discord.Color.yellow(),4:discord.Color.green(),5:discord.Color.from_rgb(255,215,0)}
         e=discord.Embed(title="⭐ Νέο Review", color=cm.get(self.stars,discord.Color.blurple()), timestamp=discord.utils.utcnow())
-        e.add_field(name="Αξιολόγηση", value=sd, inline=False); e.add_field(name="Σχόλιο", value=self.review_input.value, inline=False)
+        e.add_field(name="Αξιολόγηση", value=sd, inline=False)
+        e.add_field(name="Σχόλιο", value=self.review_input.value, inline=False)
         e.set_author(name=interaction.user.display_name, icon_url=interaction.user.avatar.url if interaction.user.avatar else None)
         e.set_thumbnail(url=SERVER_THUMBNAIL_URL); e.set_footer(text=f"User ID: {interaction.user.id} • Legacy Roleplay")
         await ch.send(embed=e); await interaction.response.send_message(f"✅ Review ({sd}) στάλθηκε!", ephemeral=True)
 
 class StarSelect(discord.ui.Select):
     def __init__(self):
-        opts=[discord.SelectOption(label="⭐ 1 Αστέρι",        emoji="⭐", value="1"),
-              discord.SelectOption(label="⭐⭐ 2 Αστέρια",     emoji="⭐", value="2"),
-              discord.SelectOption(label="⭐⭐⭐ 3 Αστέρια",   emoji="⭐", value="3"),
-              discord.SelectOption(label="⭐⭐⭐⭐ 4 Αστέρια", emoji="⭐", value="4"),
-              discord.SelectOption(label="⭐⭐⭐⭐⭐ 5 Αστέρια",emoji="⭐", value="5")]
+        opts=[discord.SelectOption(label="⭐ 1 Αστέρι",         emoji="⭐", value="1"),
+              discord.SelectOption(label="⭐⭐ 2 Αστέρια",      emoji="⭐", value="2"),
+              discord.SelectOption(label="⭐⭐⭐ 3 Αστέρια",    emoji="⭐", value="3"),
+              discord.SelectOption(label="⭐⭐⭐⭐ 4 Αστέρια",  emoji="⭐", value="4"),
+              discord.SelectOption(label="⭐⭐⭐⭐⭐ 5 Αστέρια", emoji="⭐", value="5")]
         super().__init__(custom_id="star_select_review", placeholder="⭐ Επίλεξε αξιολόγηση...", min_values=1, max_values=1, options=opts)
     async def callback(self, interaction): await interaction.response.send_modal(ReviewModal(int(self.values[0])))
 
@@ -925,7 +936,7 @@ async def on_message(message):
         uid=str(author.id); now=time.time()
         if uid not in spam_tracker: spam_tracker[uid]=[]
         spam_tracker[uid].append(now); spam_tracker[uid]=[t for t in spam_tracker[uid] if now-t<5]
-        if len(spam_tracker[uid])>=7:
+        if len(spam_tracker[uid])>=5:
             spam_tracker[uid]=[]
             if not author.guild_permissions.administrator:
                 try: await author.timeout(datetime.timedelta(minutes=10), reason="Spam")
@@ -973,9 +984,9 @@ async def on_member_join(member):
     if age<ALT_ACCOUNT_AGE_DAYS:
         e=discord.Embed(title="🚨 ALT ACCOUNT DETECTED!", color=discord.Color.dark_red(), timestamp=discord.utils.utcnow())
         e.set_thumbnail(url=member.display_avatar.url)
-        e.add_field(name="👤 Χρήστης",         value=f"{member.mention} (`{member.id}`)", inline=False)
-        e.add_field(name="📅 Ηλικία",          value=f"**{age} ημέρες**", inline=True)
-        e.add_field(name="📆 Δημιουργήθηκε",   value=f"<t:{int(member.created_at.timestamp())}:F>", inline=True)
+        e.add_field(name="👤 Χρήστης",       value=f"{member.mention} (`{member.id}`)", inline=False)
+        e.add_field(name="📅 Ηλικία",        value=f"**{age} ημέρες**", inline=True)
+        e.add_field(name="📆 Δημιουργήθηκε", value=f"<t:{int(member.created_at.timestamp())}:F>", inline=True)
         if ALT_AUTO_KICK:
             try:
                 await member.kick(reason=f"Alt account — ηλικία: {age} ημέρες")
@@ -1026,10 +1037,10 @@ async def on_member_join(member):
     if log:
         e=discord.Embed(title="🟢 Μέλος Μπήκε", color=discord.Color.green(), timestamp=discord.utils.utcnow())
         e.set_thumbnail(url=member.display_avatar.url)
-        e.add_field(name="👤 Χρήστης",      value=f"{member.mention} (`{member.id}`)", inline=True)
-        e.add_field(name="📛 Username",      value=str(member), inline=True)
-        e.add_field(name="📅 Λογαριασμός",  value=f"<t:{int(member.created_at.timestamp())}:R>", inline=True)
-        e.add_field(name="👥 Μέλη τώρα",    value=str(guild.member_count), inline=True)
+        e.add_field(name="👤 Χρήστης",     value=f"{member.mention} (`{member.id}`)", inline=True)
+        e.add_field(name="📛 Username",     value=str(member), inline=True)
+        e.add_field(name="📅 Λογαριασμός", value=f"<t:{int(member.created_at.timestamp())}:R>", inline=True)
+        e.add_field(name="👥 Μέλη τώρα",   value=str(guild.member_count), inline=True)
         e.set_footer(text=f"Legacy Roleplay • Member Log | User ID: {member.id}")
         await log.send(embed=e)
     await update_voice_channels(guild)
@@ -1038,11 +1049,11 @@ async def on_member_join(member):
 #  COMMANDS
 # ══════════════════════════════════════════════════════════════
 
-# ── MODERATION (staff + managers) ────────────────────────────
+# ── MODERATION — Staff, Manager, Owner, Co-Owner, Founder ─────
 @bot.command()
 async def ban(ctx, member: discord.Member=None, *, reason="No reason"):
     if not has_staff_permissions(ctx.author): return await ctx.reply("❌ Δεν έχεις δικαίωμα.")
-    if not member: return await ctx.reply("Πρέπει να γράψεις ποιον.")
+    if not member: return await ctx.reply("Χρήση: `!ban @user [λόγος]`")
     await member.ban(reason=reason); await ctx.reply(f"🔨 **{member}** banned.")
     log=bot.get_channel(BOT_LOG_ID)
     if log: await log.send(f"🔨 **{ctx.author}** banned **{member}** — {reason}")
@@ -1050,7 +1061,7 @@ async def ban(ctx, member: discord.Member=None, *, reason="No reason"):
 @bot.command()
 async def kick(ctx, member: discord.Member=None, *, reason="No reason"):
     if not has_staff_permissions(ctx.author): return await ctx.reply("❌ Δεν έχεις δικαίωμα.")
-    if not member: return await ctx.reply("Πρέπει να γράψεις ποιον.")
+    if not member: return await ctx.reply("Χρήση: `!kick @user [λόγος]`")
     await member.kick(reason=reason); await ctx.reply(f"👢 **{member}** kicked.")
     log=bot.get_channel(BOT_LOG_ID)
     if log: await log.send(f"👢 **{ctx.author}** kicked **{member}** — {reason}")
@@ -1058,7 +1069,7 @@ async def kick(ctx, member: discord.Member=None, *, reason="No reason"):
 @bot.command()
 async def timeout(ctx, member: discord.Member=None, minutes: int=None, *, reason="No reason"):
     if not has_staff_permissions(ctx.author): return await ctx.reply("❌ Δεν έχεις δικαίωμα.")
-    if not member or not minutes: return await ctx.reply("Χρήση: `!timeout @user <minutes> <reason>`")
+    if not member or not minutes: return await ctx.reply("Χρήση: `!timeout @user <minutes> [λόγος]`")
     await member.timeout(datetime.timedelta(minutes=minutes), reason=reason)
     await ctx.reply(f"⏳ **{member}** timeout {minutes} λεπτά.")
     log=bot.get_channel(BOT_LOG_ID)
@@ -1071,11 +1082,12 @@ async def clearmessage(ctx, amount: int=None):
     await ctx.channel.purge(limit=amount+1)
     await ctx.send(f"🧹 Διαγράφηκαν **{amount}** μηνύματα.", delete_after=3)
 
-# ── INFO (staff + managers) ───────────────────────────────────
+# ── INFO — Staff, Manager, Owner, Co-Owner, Founder ───────────
 @bot.command()
 async def serverstatus(ctx):
     if not is_staff_or_manager(ctx.author): return await ctx.reply("❌ Δεν έχεις δικαίωμα.")
-    g=ctx.guild; e=discord.Embed(title="📊 Server Status", color=discord.Color.blurple(), timestamp=discord.utils.utcnow())
+    g=ctx.guild
+    e=discord.Embed(title="📊 Server Status", color=discord.Color.blurple(), timestamp=discord.utils.utcnow())
     e.set_thumbnail(url=g.icon.url if g.icon else None)
     e.add_field(name="👤 Members", value=sum(1 for m in g.members if not m.bot))
     e.add_field(name="🤖 Bots",    value=sum(1 for m in g.members if m.bot))
@@ -1144,13 +1156,13 @@ async def scan(ctx, member: discord.Member=None):
             color=discord.Color.dark_red() if (age<ALT_ACCOUNT_AGE_DAYS or member.guild_permissions.administrator) else discord.Color.blurple(),
             timestamp=discord.utils.utcnow())
         e.set_thumbnail(url=member.display_avatar.url)
-        e.add_field(name="👤 Χρήστης",        value=f"{member} (`{member.id}`)", inline=True)
-        e.add_field(name="📅 Ηλικία",         value=f"{age} ημέρες {'⚠️ Πιθανό ALT' if age<ALT_ACCOUNT_AGE_DAYS else '✅'}", inline=True)
-        e.add_field(name="📆 Δημιουργήθηκε",  value=f"<t:{int(member.created_at.timestamp())}:F>", inline=True)
+        e.add_field(name="👤 Χρήστης",       value=f"{member} (`{member.id}`)", inline=True)
+        e.add_field(name="📅 Ηλικία",        value=f"{age} ημέρες {'⚠️ Πιθανό ALT' if age<ALT_ACCOUNT_AGE_DAYS else '✅'}", inline=True)
+        e.add_field(name="📆 Δημιουργήθηκε", value=f"<t:{int(member.created_at.timestamp())}:F>", inline=True)
         e.add_field(name="🔑 Permissions",
             value=f"Administrator: {'✅' if member.guild_permissions.administrator else '❌'}\nBan: {'✅' if member.guild_permissions.ban_members else '❌'}\nKick: {'✅' if member.guild_permissions.kick_members else '❌'}\nManage Guild: {'✅' if member.guild_permissions.manage_guild else '❌'}",
             inline=True)
-        e.add_field(name="🎭 Ρόλοι",          value=", ".join(r.mention for r in member.roles[1:]) or "Κανένας", inline=False)
+        e.add_field(name="🎭 Ρόλοι",         value=", ".join(r.mention for r in member.roles[1:]) or "Κανένας", inline=False)
         e.add_field(name=f"📋 Τελευταίες Ενέργειες ({len(al)})", value="\n".join(al) if al else "Καμία", inline=False)
         e.set_footer(text="Legacy Roleplay • Scan")
         await ctx.send(embed=e); return
@@ -1164,23 +1176,25 @@ async def scan(ctx, member: discord.Member=None):
         if not m.bot and age<ALT_ACCOUNT_AGE_DAYS: newa.append(f"{m.mention} — {age} ημέρες")
         if not m.bot and m.guild_permissions.administrator and age<ALT_ACCOUNT_AGE_DAYS: sus.append(f"🚨 {m.mention} — Admin + {age} ημέρες")
     e=discord.Embed(title=f"🔍 Server Scan — {guild.name}", color=discord.Color.dark_orange(), timestamp=discord.utils.utcnow())
-    e.add_field(name=f"👑 Administrators ({len(admins)})",               value="\n".join(admins[:10]) or "Κανένας", inline=False)
-    e.add_field(name=f"🤖 Bots ({len(bl)}) ✅/⚠️",                     value="\n".join(bl[:10])     or "Κανένα",  inline=False)
-    e.add_field(name=f"⚠️ Νέοι < {ALT_ACCOUNT_AGE_DAYS} ημέρες ({len(newa)})", value="\n".join(newa[:10]) or "Κανένας", inline=False)
-    e.add_field(name=f"🚨 Ύποπτα ({len(sus)})",                         value="\n".join(sus[:10])    or "✅ Τίποτα",inline=False)
+    e.add_field(name=f"👑 Administrators ({len(admins)})",                     value="\n".join(admins[:10]) or "Κανένας", inline=False)
+    e.add_field(name=f"🤖 Bots ({len(bl)}) ✅/⚠️",                           value="\n".join(bl[:10])     or "Κανένα",  inline=False)
+    e.add_field(name=f"⚠️ Νέοι < {ALT_ACCOUNT_AGE_DAYS} ημέρες ({len(newa)})",value="\n".join(newa[:10])   or "Κανένας", inline=False)
+    e.add_field(name=f"🚨 Ύποπτα ({len(sus)})",                               value="\n".join(sus[:10])    or "✅ Τίποτα",inline=False)
     e.set_footer(text=f"Legacy Roleplay • Scan | {guild.member_count} μέλη")
     await ctx.send(embed=e)
 
-# ── ONLY OWNER + FOUNDER ──────────────────────────────────────
+# ── Owner + Co-Owner + Founder ────────────────────────────────
 @bot.command()
 async def say(ctx, *, message: str):
-    if not is_owner_or_founder(ctx.author): return await ctx.reply("❌ Μόνο Owner/Founder.")
+    if not is_owner_or_above(ctx.author): return await ctx.reply("❌ Μόνο Owner/Co-Owner/Founder.")
     await ctx.send(message)
+    try: await ctx.message.delete()
+    except: pass
 
 @bot.command()
 async def say2(ctx, *, message: str):
-    """Στέλνει embed με thumbnail τη φωτό του server."""
-    if not is_owner_or_founder(ctx.author): return await ctx.reply("❌ Μόνο Owner/Founder.")
+    """Embed με thumbnail τη φωτό του server."""
+    if not is_owner_or_above(ctx.author): return await ctx.reply("❌ Μόνο Owner/Co-Owner/Founder.")
     guild=ctx.guild
     e=discord.Embed(description=message, color=discord.Color.from_rgb(20,20,40), timestamp=discord.utils.utcnow())
     if guild.icon: e.set_thumbnail(url=guild.icon.url)
@@ -1189,16 +1203,26 @@ async def say2(ctx, *, message: str):
     try: await ctx.message.delete()
     except: pass
 
-# ── ONLY FOUNDER ──────────────────────────────────────────────
+# ── Founder Only ──────────────────────────────────────────────
 @bot.command()
 async def dmall(ctx, *, message: str):
+    """Στέλνει embed με thumbnail server, ώρα αποστολής και ποιος το έστειλε."""
     if not is_founder(ctx.author): return await ctx.reply("❌ Μόνο Founder.")
-    sent=0
-    for m in ctx.guild.members:
+    guild=ctx.guild
+    now_str=discord.utils.utcnow().strftime("%d/%m/%Y %H:%M UTC")
+    sent=0; failed=0
+    for m in guild.members:
         if m.bot: continue
-        try: await m.send(message); sent+=1
-        except: continue
-    await ctx.reply(f"📨 Στάλθηκε σε **{sent}** μέλη.")
+        try:
+            e=discord.Embed(description=message, color=discord.Color.from_rgb(20,20,40), timestamp=discord.utils.utcnow())
+            if guild.icon: e.set_thumbnail(url=guild.icon.url)
+            e.set_footer(
+                text=f"Στάλθηκε από: {ctx.author.display_name} • {now_str}",
+                icon_url=ctx.author.display_avatar.url
+            )
+            await m.send(embed=e); sent+=1
+        except: failed+=1; continue
+    await ctx.reply(f"📨 Στάλθηκε σε **{sent}** μέλη. ❌ Απέτυχε σε **{failed}**.")
 
 @bot.command()
 async def setaltdays(ctx, days: int=None):
@@ -1295,7 +1319,7 @@ async def dutypanel(ctx):
     e=discord.Embed(title="🟢 Staff Duty Panel",
         description="Πάτα **On Duty** όταν ξεκινάς βάρδια και **Off Duty** όταν τελειώνεις.\n\n"
                     "📋 **Duty Status** — Δες ποιοι είναι on duty τώρα\n"
-                    "🏆 **Leaderboard** — Δες τις συνολικές ώρες duty",
+                    "🏆 **Leaderboard** — Συνολικές ώρες (δεν επαναφέρονται ποτέ)",
         color=discord.Color.green())
     await ctx.send(embed=e, view=DutyView()); await ctx.reply("Panel στάλθηκε.", delete_after=2)
 
@@ -1315,30 +1339,43 @@ async def reviewpanel(ctx):
     e.set_footer(text="Legacy Roleplay • Review System")
     await ctx.send(embed=e, view=ReviewPanelView()); await ctx.reply("Panel στάλθηκε.", delete_after=2)
 
-# ── PANELS ────────────────────────────────────────────────────
+# ── !panel — Founder (όλες οι εντολές) ───────────────────────
 @bot.command()
 async def panel(ctx):
-    """Panel για Founders — όλες οι εντολές."""
     if not is_founder(ctx.author): return await ctx.reply("❌ Μόνο Founder.")
-    e=discord.Embed(title="📌 Legacy Roleplay — Panel", color=discord.Color.dark_gray(), timestamp=discord.utils.utcnow())
+    e=discord.Embed(title="📌 Legacy Roleplay — Founder Panel", color=discord.Color.dark_gray(), timestamp=discord.utils.utcnow())
     e.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
-    e.add_field(name="🛠 Moderation",    value="`!ban` `!kick` `!timeout` `!clearmessage`", inline=False)
-    e.add_field(name="📊 Info",          value="`!serverstatus` `!invites [@user]` `!serverinvites` `!scan [@user]`", inline=False)
-    e.add_field(name="🧰 Utility",       value="`!say` `!say2` `!dmall`", inline=False)
-    e.add_field(name="🔍 Security",      value="`!scan [@user]` `!setaltdays <days>` `!togglealtban`", inline=False)
-    e.add_field(name="📋 Applications",  value="`!applicationpanel` `!lockapplication <type>`", inline=False)
-    e.add_field(name="🎫 Panels",        value="`!ticketpanel` `!jobpanel` `!donatepanel` `!suggestionpanel` `!reviewpanel` `!dutypanel`", inline=False)
+    e.add_field(name="🛠 Moderation",   value="`!ban` `!kick` `!timeout` `!clearmessage`", inline=False)
+    e.add_field(name="📊 Info",         value="`!serverstatus` `!invites [@user]` `!serverinvites` `!scan [@user]`", inline=False)
+    e.add_field(name="🧰 Utility",      value="`!say <msg>` `!say2 <msg>` `!dmall <msg>`", inline=False)
+    e.add_field(name="🔍 Security",     value="`!setaltdays <days>` `!togglealtban`", inline=False)
+    e.add_field(name="📋 Applications", value="`!applicationpanel` `!lockapplication <type>`", inline=False)
+    e.add_field(name="🎫 Panels",       value="`!ticketpanel` `!jobpanel` `!donatepanel` `!suggestionpanel` `!reviewpanel` `!dutypanel`", inline=False)
     e.set_footer(text=f"Legacy Roleplay • Founder Panel | {ctx.author}")
     await ctx.reply(embed=e)
 
+# ── !panel2 — Owner/Co-Owner + Founder ───────────────────────
 @bot.command()
 async def panel2(ctx):
-    """Panel για Staff/Managers — εντολές που μπορούν να κάνουν."""
+    """Panel για Owner/Co-Owner — εντολές που μπορούν να κάνουν."""
+    if not is_owner_or_above(ctx.author): return await ctx.reply("❌ Μόνο Owner/Co-Owner/Founder.")
+    e=discord.Embed(title="📌 Legacy Roleplay — Owner Panel", color=discord.Color.gold(), timestamp=discord.utils.utcnow())
+    e.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+    e.add_field(name="🛠 Moderation",  value="`!ban @user [λόγος]`\n`!kick @user [λόγος]`\n`!timeout @user <minutes> [λόγος]`\n`!clearmessage <amount>`", inline=False)
+    e.add_field(name="📊 Info",        value="`!serverstatus`\n`!invites [@user]`\n`!serverinvites`\n`!scan [@user]`", inline=False)
+    e.add_field(name="🧰 Utility",     value="`!say <msg>`\n`!say2 <msg>`", inline=False)
+    e.set_footer(text=f"Legacy Roleplay • Owner Panel | {ctx.author}")
+    await ctx.reply(embed=e)
+
+# ── !panel3 — Staff/Manager ───────────────────────────────────
+@bot.command()
+async def panel3(ctx):
+    """Panel για Staff/Managers."""
     if not is_staff_or_manager(ctx.author): return await ctx.reply("❌ Δεν έχεις δικαίωμα.")
     e=discord.Embed(title="📌 Legacy Roleplay — Staff Panel", color=discord.Color.blurple(), timestamp=discord.utils.utcnow())
     e.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
-    e.add_field(name="🛠 Moderation",   value="`!ban @user [λόγος]`\n`!kick @user [λόγος]`\n`!timeout @user <minutes> [λόγος]`\n`!clearmessage <amount>`", inline=False)
-    e.add_field(name="📊 Info",         value="`!serverstatus`\n`!invites [@user]`\n`!serverinvites`\n`!scan [@user]`", inline=False)
+    e.add_field(name="🛠 Moderation",  value="`!ban @user [λόγος]`\n`!kick @user [λόγος]`\n`!timeout @user <minutes> [λόγος]`\n`!clearmessage <amount>`", inline=False)
+    e.add_field(name="📊 Info",        value="`!serverstatus`\n`!invites [@user]`\n`!serverinvites`\n`!scan [@user]`", inline=False)
     e.set_footer(text=f"Legacy Roleplay • Staff Panel | {ctx.author}")
     await ctx.reply(embed=e)
 
