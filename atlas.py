@@ -81,12 +81,12 @@ BOOSTS_CHANNEL_ID  = 1490134571147071538
 APPLICATION_MANAGER_ROLES = [FOUNDER_ROLE_ID, OWNER_ID, CO_OWNER_ID, WHITELIST_MANAGER_ROLE_ID, APPLICATION_MANAGER_ID]
 
 SERVER_THUMBNAIL_URL = "https://i.imgur.com/SUpJpRb.png"
-BANNER_SUPPORT  = "https://i.imgur.com/LLCEPEA.jpeg"
-BANNER_JOB      = "https://i.imgur.com/xpyHm5F.jpeg"
-BANNER_APP      = "https://i.imgur.com/rWPJXPB.jpeg"
-BANNER_SUGGEST  = "https://i.imgur.com/nDd2fSg.jpeg"
-BANNER_REVIEW   = "https://i.imgur.com/KO7zcwu.jpeg"
-BANNER_DONATE   = "https://i.imgur.com/acLOxgM.jpeg"
+BANNER_SUPPORT  = "https://i.imgur.com/wmx9cqJ.jpeg"
+BANNER_JOB      = "https://i.imgur.com/wmx9cqJ.jpeg"
+BANNER_APP      = "https://i.imgur.com/wmx9cqJ.jpeg"
+BANNER_SUGGEST  = "https://i.imgur.com/wmx9cqJ.jpeg"
+BANNER_REVIEW   = "https://i.imgur.com/wmx9cqJ.jpeg"
+BANNER_DONATE   = "https://i.imgur.com/wmx9cqJ.jpeg"
 
 WHITELIST_QUESTIONS = [
     "Ποιο είναι το όνομα στο roblox και η ηλικία σου (IRL);",
