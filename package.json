@@ -1,0 +1,16 @@
+{
+  "name": "glorious-shop-bot",
+  "version": "1.0.0",
+  "description": "Glorious Shop Discord Bot",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.16.3",
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
