@@ -1,1857 +1,1636 @@
-print(">>> GLORIOUS SHOP BOT LOADED <<<")
-
-import os, discord, asyncio, json, time, re
-from discord.ext import commands
-from flask import Flask
-from threading import Thread
-import datetime
-
-# ══════════════════════════════════════════════════════════════
-#  KEEP ALIVE (Replit / Render)
-# ══════════════════════════════════════════════════════════════
-app = Flask('')
-
-@app.route('/')
-def home():
-    return "OK"
-
-def run():
-    app.run(host='0.0.0.0', port=10000)
-
-def keep_alive():
-    t = Thread(target=run)
-    t.daemon = True
-    t.start()
-
-# ══════════════════════════════════════════════════════════════
-#  BOT INIT
-# ══════════════════════════════════════════════════════════════
-TOKEN   = os.getenv("TOKEN")
-intents = discord.Intents.all()
-bot     = commands.Bot(command_prefix="!", intents=intents)
-GUILD_ID = 1490079978300117212
-
-# ══════════════════════════════════════════════════════════════
-#  ROLE IDs  —  αλλάξτε τα με τα δικά σας IDs
-# ══════════════════════════════════════════════════════════════
-CEO_ROLE_ID            =  1490084094749573151 # CEO  (= Founder)
-OWNER_ROLE_ID          =  1490084247682285699  # Owner
-CO_OWNER_ROLE_ID       =  1490136469287993464 # Co-Owner
-CREATOR_ROLE_ID        =  1502327656019005530  # Creator  (= Developer)
-MANAGER_ROLE_ID        =  1490134503249936525  # Management
-STAFF_ROLE_ID          =  1490088402656170045  # Staff
-DONATE_MANAGER_ROLE_ID =  1490134506793861193  # Donate Manager
-
-AUTOROLE_ID  =  1502329776252256266         # Auto-role κατά join
-DUTY_ROLE_ID =  1490338840395649266            # On-Duty role
-
-# ══════════════════════════════════════════════════════════════
-#  CHANNEL IDs
-# ══════════════════════════════════════════════════════════════
-# ── Ticket Αποτελέσματα / Κατηγορίες ──────────────────────────
-#  Support Ticket Panel
-SUPPORT_CATEGORY_ID = 1502327809719406673
-
-#  Buy Panel
-BUY_PANEL_CATEGORY_ID = 1502327808825884874
-
-#  Services Ticket Panel
-SERVICES_CATEGORY_ID  = 1502347790653722704
-
-# ── Logs ──────────────────────────────────────────────────────
-BOT_LOG_ID                    = 1502327881055998084
-MESSAGE_EDIT_LOG_CHANNEL_ID   = 1502327886030569544
-MESSAGE_DELETE_LOG_CHANNEL_ID = 1502327886030569544
-MEMBER_JOIN_LOG_CHANNEL_ID    = 1502327883232841801
-MEMBER_LEAVE_LOG_CHANNEL_ID   = 1502327883232841801
-ROLE_UPDATE_LOG_CHANNEL_ID    = 1502327884881334343
-VOICE_LOG_CHANNEL_ID          = 1502327881991192778
-CHANNEL_CREATE_LOG_CHANNEL_ID = 1502328585451733053
-CHANNEL_DELETE_LOG_CHANNEL_ID = 1502328585451733053
-ROLE_CREATE_LOG_CHANNEL_ID    = 1502327884881334343
-ROLE_DELETE_LOG_CHANNEL_ID    = 1502327884881334343
-TICKET_LOG_ID                 = 1502327879864680498
-DUTY_LOG_CHANNEL_ID           = 1502447599670788106
-DUTY_LEADERBOARD_CHANNEL_ID   = 1502447599670788106
-SECURITY_LOG_CHANNEL_ID       = 1502328608805486765
-SUGGESTION_CHANNEL_ID         = 1502327874919600301
-REVIEW_CHANNEL_ID             = 1502327876249190491
-INVITE_LOG_CHANNEL_ID         = 1502328657958404189
-
-# ── Voice Counters ────────────────────────────────────────────
-MEMBERS_CHANNEL_ID = 1502447935378423908
-BOTS_CHANNEL_ID    = 1502448235577479248
-ONLINE_CHANNEL_ID  = 1502448168544243833
-BOOSTS_CHANNEL_ID  = 1502448264820035625
-
-# ── Temp Voice ────────────────────────────────────────────────
-TEMP_VOICE_CATEGORY_ID = 1502349327165554698
-TEMP_VOICE_CHANNEL_ID  = 1502340058399641670
-
-# ══════════════════════════════════════════════════════════════
-#  BRANDING
-# ══════════════════════════════════════════════════════════════
-SERVER_NAME          = "Glorious Shop"
-SERVER_THUMBNAIL_URL = "https://i.imgur.com/mDene4Q.png"
-BANNER_SUPPORT       = "https://i.imgur.com/bpJLtyU.png"
-BANNER_BUY           = "https://i.imgur.com/bpJLtyU.png"
-BANNER_SERVICES      = "https://i.imgur.com/bpJLtyU.png"
-BANNER_SUGGEST       = "https://i.imgur.com/bpJLtyU.png"
-BANNER_REVIEW        = "https://i.imgur.com/bpJLtyU.png"
-
-# ══════════════════════════════════════════════════════════════
-#  PERMISSION HELPERS
-# ══════════════════════════════════════════════════════════════
-def is_ceo(u):
-    return any(r.id == CEO_ROLE_ID for r in u.roles)
-
-def is_owner_or_above(u):
-    return any(r.id in (CEO_ROLE_ID, OWNER_ROLE_ID, CO_OWNER_ROLE_ID) for r in u.roles)
-
-def is_staff_or_above(m):
-    return any(r.id in (
-        CEO_ROLE_ID, OWNER_ROLE_ID, CO_OWNER_ROLE_ID,
-        CREATOR_ROLE_ID, MANAGER_ROLE_ID, STAFF_ROLE_ID
-    ) for r in m.roles)
-
-def is_manager_or_above(m):
-    return any(r.id in (
-        CEO_ROLE_ID, OWNER_ROLE_ID, CO_OWNER_ROLE_ID,
-        CREATOR_ROLE_ID, MANAGER_ROLE_ID
-    ) for r in m.roles)
-
-def has_mod_permissions(m):
-    return (m.guild_permissions.kick_members or m.guild_permissions.ban_members or
-            is_staff_or_above(m))
-
-# ══════════════════════════════════════════════════════════════
-#  DATA FILES
-# ══════════════════════════════════════════════════════════════
-DUTY_FILE = "duty.json"
-
-def load_duty_data():
-    if not os.path.exists(DUTY_FILE):
-        open(DUTY_FILE, "w").write("{}")
-    return json.load(open(DUTY_FILE))
-
-def save_duty_data(d):
-    json.dump(d, open(DUTY_FILE, "w"), indent=4)
-
-duty_data = load_duty_data()
-
-SECURITY_FILE = "security.json"
-
-def load_security_data():
-    if not os.path.exists(SECURITY_FILE):
-        json.dump({"spam": {}, "ban_kick_tracker": {}, "alts": []}, open(SECURITY_FILE, "w"))
-    return json.load(open(SECURITY_FILE))
-
-def save_security_data(d):
-    json.dump(d, open(SECURITY_FILE, "w"), indent=4)
-
-security_data = load_security_data()
-
-INVITE_FILE = "invites.json"
-
-def load_invite_data():
-    if not os.path.exists(INVITE_FILE):
-        open(INVITE_FILE, "w").write("{}")
-    return json.load(open(INVITE_FILE))
-
-def save_invite_data(d):
-    json.dump(d, open(INVITE_FILE, "w"), indent=4)
-
-invite_data  = load_invite_data()
-invite_cache = {}
-
-ALT_ACCOUNT_AGE_DAYS = 30
-ALT_AUTO_KICK        = True
-WHITELISTED_BOT_IDS  = set()
-URL_PATTERN   = re.compile(r"(https?://|www\.)\S+|discord\.gg/\S+", re.IGNORECASE)
-TOKEN_PATTERN = re.compile(r"[MNO][a-zA-Z0-9_-]{23,25}\.[a-zA-Z0-9_-]{6}\.[a-zA-Z0-9_-]{27,38}")
-
-spam_tracker      = {}
-ban_kick_tracker  = {}
-pending_bots      = {}
-
-# ══════════════════════════════════════════════════════════════
-#  SECURITY ALERT HELPER
-# ══════════════════════════════════════════════════════════════
-async def send_security_alert(guild, embed, ping=True):
-    sec_log = bot.get_channel(SECURITY_LOG_CHANNEL_ID)
-    if not sec_log:
-        return
-    ceo_role = guild.get_role(CEO_ROLE_ID)
-    content  = ceo_role.mention if (ping and ceo_role) else None
-    asyncio.create_task(sec_log.send(content=content, embed=embed))
-
-# ══════════════════════════════════════════════════════════════
-#  VOICE COUNTERS
-# ══════════════════════════════════════════════════════════════
-async def update_voice_channels(guild):
-    for ch_id, name in [
-        (MEMBERS_CHANNEL_ID, f"👤 Members: {sum(1 for m in guild.members if not m.bot)}"),
-        (BOTS_CHANNEL_ID,    f"🤖 Bots: {sum(1 for m in guild.members if m.bot)}"),
-        (ONLINE_CHANNEL_ID,  f"🟢 Online: {sum(1 for m in guild.members if m.status != discord.Status.offline)}"),
-        (BOOSTS_CHANNEL_ID,  f"🚀 Boosts: {guild.premium_subscription_count}"),
-    ]:
-        ch = guild.get_channel(ch_id)
-        if ch:
-            try:
-                await ch.edit(name=name)
-            except:
-                pass
-
-@bot.event
-async def on_presence_update(before, after):
-    await update_voice_channels(after.guild)
-
-@bot.event
-async def on_guild_update(before, after):
-    if before.premium_subscription_count != after.premium_subscription_count:
-        await update_voice_channels(after)
-
-# ══════════════════════════════════════════════════════════════
-#  LOGS
-# ══════════════════════════════════════════════════════════════
-@bot.event
-async def on_voice_state_update(member, before, after):
-    guild = member.guild
-    log   = bot.get_channel(VOICE_LOG_CHANNEL_ID)
-
-    # Temp voice creation
-    if after.channel and after.channel.id == TEMP_VOICE_CHANNEL_ID:
-        cat = guild.get_channel(TEMP_VOICE_CATEGORY_ID)
-        tc  = await guild.create_voice_channel(name=f"{member.name}'s Channel", category=cat)
-        try:
-            await member.move_to(tc)
-        except:
-            pass
-        if log:
-            e = discord.Embed(title="📞 Support Channel Created", color=discord.Color.blue(),
-                              timestamp=discord.utils.utcnow())
-            e.set_thumbnail(url=member.display_avatar.url)
-            e.add_field(name="👤 User",    value=f"{member.mention} (`{member.id}`)", inline=True)
-            e.add_field(name="📁 Channel", value=f"**{tc.name}**", inline=True)
-            e.set_footer(text=f"{SERVER_NAME} • Voice Log | Channel ID: {tc.id}")
-            await log.send(embed=e)
-
-    # Temp voice deletion
-    if (before.channel and before.channel.category_id == TEMP_VOICE_CATEGORY_ID
-            and before.channel.id != TEMP_VOICE_CHANNEL_ID
-            and len(before.channel.members) == 0):
-        try:
-            nc = before.channel.name
-            await before.channel.delete()
-            if log:
-                e = discord.Embed(title="🗑️ Support Channel Deleted", color=discord.Color.red(),
-                                  timestamp=discord.utils.utcnow())
-                e.add_field(name="📁 Channel", value=f"**{nc}**", inline=True)
-                e.add_field(name="📌 Reason",  value="Empty channel", inline=True)
-                e.set_footer(text=f"{SERVER_NAME} • Voice Log")
-                await log.send(embed=e)
-        except:
-            pass
-
-    if not log:
-        return
-
-    if not before.channel and after.channel:
-        e = discord.Embed(title="🔊 Voice Join", color=discord.Color.green(),
-                          timestamp=discord.utils.utcnow())
-        e.set_thumbnail(url=member.display_avatar.url)
-        e.add_field(name="👤 User",    value=f"{member.mention} (`{member.id}`)", inline=True)
-        e.add_field(name="🔊 Channel", value=f"**{after.channel.name}**", inline=True)
-        e.set_footer(text=f"{SERVER_NAME} • Voice Log | User ID: {member.id}")
-        await log.send(embed=e)
-    elif before.channel and not after.channel:
-        e = discord.Embed(title="🔇 Voice Leave", color=discord.Color.red(),
-                          timestamp=discord.utils.utcnow())
-        e.set_thumbnail(url=member.display_avatar.url)
-        e.add_field(name="👤 User",    value=f"{member.mention} (`{member.id}`)", inline=True)
-        e.add_field(name="🔇 Channel", value=f"**{before.channel.name}**", inline=True)
-        e.set_footer(text=f"{SERVER_NAME} • Voice Log | User ID: {member.id}")
-        await log.send(embed=e)
-    elif before.channel != after.channel:
-        e = discord.Embed(title="🔀 Voice Move", color=discord.Color.yellow(),
-                          timestamp=discord.utils.utcnow())
-        e.set_thumbnail(url=member.display_avatar.url)
-        e.add_field(name="👤 User", value=f"{member.mention} (`{member.id}`)", inline=False)
-        e.add_field(name="📤 From", value=f"**{before.channel.name}**", inline=True)
-        e.add_field(name="📥 To",   value=f"**{after.channel.name}**",  inline=True)
-        e.set_footer(text=f"{SERVER_NAME} • Voice Log | User ID: {member.id}")
-        await log.send(embed=e)
-
-
-@bot.event
-async def on_guild_role_create(role):
-    log = bot.get_channel(ROLE_CREATE_LOG_CHANNEL_ID)
-    if not log:
-        return
-    moderator = "Unknown"
-    try:
-        async for entry in role.guild.audit_logs(limit=1, action=discord.AuditLogAction.role_create):
-            moderator = entry.user.mention
-            break
-    except:
-        pass
-    e = discord.Embed(title="🆕 Role Created", color=discord.Color.green(),
-                      timestamp=discord.utils.utcnow())
-    e.add_field(name="📛 Name",    value=f"**{role.name}**", inline=True)
-    e.add_field(name="🎨 Color",   value=str(role.color),    inline=True)
-    e.add_field(name="👤 By",      value=moderator,           inline=True)
-    e.add_field(name="🆔 Role ID", value=f"`{role.id}`",      inline=True)
-    e.set_footer(text=f"{SERVER_NAME} • Role Log")
-    await log.send(embed=e)
-
-
-@bot.event
-async def on_guild_role_delete(role):
-    log = bot.get_channel(ROLE_DELETE_LOG_CHANNEL_ID)
-    if not log:
-        return
-    moderator = "Unknown"
-    try:
-        async for entry in role.guild.audit_logs(limit=1, action=discord.AuditLogAction.role_delete):
-            moderator = entry.user.mention
-            break
-    except:
-        pass
-    e = discord.Embed(title="🗑️ Role Deleted", color=discord.Color.red(),
-                      timestamp=discord.utils.utcnow())
-    e.add_field(name="📛 Name",    value=f"**{role.name}**", inline=True)
-    e.add_field(name="👤 By",      value=moderator,           inline=True)
-    e.add_field(name="🆔 Role ID", value=f"`{role.id}`",      inline=True)
-    e.set_footer(text=f"{SERVER_NAME} • Role Log")
-    await log.send(embed=e)
-
-
-@bot.event
-async def on_member_update(before, after):
-    guild = after.guild
-    log   = bot.get_channel(ROLE_UPDATE_LOG_CHANNEL_ID)
-    if not log:
-        return
-    if len(after.roles) > len(before.roles):
-        new_role = next(r for r in after.roles if r not in before.roles)
-        async for entry in guild.audit_logs(limit=5, action=discord.AuditLogAction.member_role_update):
-            if entry.target.id == after.id:
-                e = discord.Embed(title="➕ Role Added", color=discord.Color.green(),
-                                  timestamp=discord.utils.utcnow())
-                e.set_thumbnail(url=after.display_avatar.url)
-                e.add_field(name="👤 User",       value=f"{after.mention} (`{after.id}`)", inline=True)
-                e.add_field(name="🎭 Role",        value=f"**{new_role.name}**",            inline=True)
-                e.add_field(name="🛡️ Moderator", value=entry.user.mention,               inline=True)
-                e.set_footer(text=f"{SERVER_NAME} • Role Log | Role ID: {new_role.id}")
-                await log.send(embed=e)
-                break
-    elif len(after.roles) < len(before.roles):
-        removed = next(r for r in before.roles if r not in after.roles)
-        async for entry in guild.audit_logs(limit=5, action=discord.AuditLogAction.member_role_update):
-            if entry.target.id == after.id:
-                e = discord.Embed(title="➖ Role Removed", color=discord.Color.red(),
-                                  timestamp=discord.utils.utcnow())
-                e.set_thumbnail(url=after.display_avatar.url)
-                e.add_field(name="👤 User",       value=f"{after.mention} (`{after.id}`)", inline=True)
-                e.add_field(name="🎭 Role",        value=f"**{removed.name}**",             inline=True)
-                e.add_field(name="🛡️ Moderator", value=entry.user.mention,               inline=True)
-                e.set_footer(text=f"{SERVER_NAME} • Role Log | Role ID: {removed.id}")
-                await log.send(embed=e)
-                break
-
-
-@bot.event
-async def on_guild_channel_create(channel):
-    log = bot.get_channel(CHANNEL_CREATE_LOG_CHANNEL_ID)
-    if not log:
-        return
-    moderator = "Unknown"
-    try:
-        async for entry in channel.guild.audit_logs(limit=1, action=discord.AuditLogAction.channel_create):
-            moderator = entry.user.mention
-            break
-    except:
-        pass
-    e = discord.Embed(title="📁 Channel Created", color=discord.Color.green(),
-                      timestamp=discord.utils.utcnow())
-    e.add_field(name="📛 Name",       value=f"**{channel.name}**",         inline=True)
-    e.add_field(name="📂 Type",       value=str(channel.type).capitalize(), inline=True)
-    e.add_field(name="👤 By",         value=moderator,                      inline=True)
-    if hasattr(channel, "category") and channel.category:
-        e.add_field(name="🗂️ Category", value=channel.category.name, inline=True)
-    e.add_field(name="🆔 Channel ID", value=f"`{channel.id}`", inline=True)
-    e.set_footer(text=f"{SERVER_NAME} • Channel Log")
-    await log.send(embed=e)
-
-
-@bot.event
-async def on_guild_channel_delete(channel):
-    log = bot.get_channel(CHANNEL_DELETE_LOG_CHANNEL_ID)
-    if not log:
-        return
-    moderator = "Unknown"
-    try:
-        async for entry in channel.guild.audit_logs(limit=1, action=discord.AuditLogAction.channel_delete):
-            moderator = entry.user.mention
-            break
-    except:
-        pass
-    e = discord.Embed(title="🗑️ Channel Deleted", color=discord.Color.red(),
-                      timestamp=discord.utils.utcnow())
-    e.add_field(name="📛 Name",       value=f"**{channel.name}**",         inline=True)
-    e.add_field(name="📂 Type",       value=str(channel.type).capitalize(), inline=True)
-    e.add_field(name="👤 By",         value=moderator,                      inline=True)
-    e.add_field(name="🆔 Channel ID", value=f"`{channel.id}`",              inline=True)
-    e.set_footer(text=f"{SERVER_NAME} • Channel Log")
-    await log.send(embed=e)
-
-
-@bot.event
-async def on_message_edit(before, after):
-    if before.author.bot or before.content == after.content:
-        return
-    log = bot.get_channel(MESSAGE_EDIT_LOG_CHANNEL_ID)
-    if not log:
-        return
-    e = discord.Embed(title="✏️ Message Edited", color=discord.Color.orange(),
-                      timestamp=discord.utils.utcnow())
-    e.set_thumbnail(url=before.author.display_avatar.url)
-    e.add_field(name="👤 User",    value=f"{before.author.mention} (`{before.author.id}`)", inline=True)
-    e.add_field(name="📢 Channel", value=before.channel.mention,                            inline=True)
-    e.add_field(name="📝 Before",  value=before.content[:1020] or "*[empty]*",              inline=False)
-    e.add_field(name="📝 After",   value=after.content[:1020]  or "*[empty]*",              inline=False)
-    e.add_field(name="🔗 Link",    value=f"[Jump to message]({after.jump_url})",            inline=False)
-    e.set_footer(text=f"{SERVER_NAME} • Message Log | User ID: {before.author.id}")
-    await log.send(embed=e)
-
-
-@bot.event
-async def on_message_delete(message):
-    if message.author.bot:
-        return
-    log = bot.get_channel(MESSAGE_DELETE_LOG_CHANNEL_ID)
-    if not log:
-        return
-    e = discord.Embed(title="🗑️ Message Deleted", color=discord.Color.red(),
-                      timestamp=discord.utils.utcnow())
-    e.set_thumbnail(url=message.author.display_avatar.url)
-    e.add_field(name="👤 User",    value=f"{message.author.mention} (`{message.author.id}`)", inline=True)
-    e.add_field(name="📢 Channel", value=message.channel.mention,                             inline=True)
-    e.add_field(name="📝 Content", value=message.content[:1020] or "*[no text]*",             inline=False)
-    if message.attachments:
-        e.add_field(name="📎 Files", value="\n".join(a.filename for a in message.attachments), inline=False)
-    e.set_footer(text=f"{SERVER_NAME} • Message Log | User ID: {message.author.id}")
-    await log.send(embed=e)
-
-# ══════════════════════════════════════════════════════════════
-#  TICKET CLOSE VIEW  (shared across all panels)
-# ══════════════════════════════════════════════════════════════
-class TicketCloseView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-
-    @discord.ui.button(label="🔒 Close Ticket", style=discord.ButtonStyle.red,
-                       custom_id="close_ticket_button")
-    async def close_ticket(self, interaction, button):
-        lc = interaction.guild.get_channel(TICKET_LOG_ID)
-        if lc:
-            e = discord.Embed(title="❌ Ticket Closed", color=discord.Color.red(),
-                              timestamp=discord.utils.utcnow())
-            e.set_thumbnail(url=interaction.user.display_avatar.url)
-            e.add_field(name="🔒 Closed by", value=interaction.user.mention,      inline=True)
-            e.add_field(name="📁 Channel",   value=interaction.channel.name,      inline=True)
-            e.set_footer(text=f"{SERVER_NAME} • Ticket Log")
-            await lc.send(embed=e)
-        await interaction.response.send_message("🔒 Closing in 4 seconds...")
-        await asyncio.sleep(4)
-        try:
-            await interaction.channel.delete()
-        except:
-            pass
-
-# ══════════════════════════════════════════════════════════════
-#  SUPPORT TICKET PANEL
-#  Categories:
-#    • Talk to Administrator  → CEO, Owner, Co-Owner
-#    • Support               → Staff, Management, Owner, Co-Owner
-#    • Report                → Owner, CEO
-#    • Help with a Purchase  → CEO
-#    • Other                 → Staff, Management, Owner, CEO, Co-Owner
-# ══════════════════════════════════════════════════════════════
-class SupportTicketSelect(discord.ui.Select):
-    def __init__(self):
-        opts = [
-            discord.SelectOption(
-                label="Talk to Administrator",
-                description="Direct line to the Administration",
-                emoji="👑",
-                value="admin"
-            ),
-            discord.SelectOption(
-                label="Support",
-                description="General support from our team",
-                emoji="💬",
-                value="support"
-            ),
-            discord.SelectOption(
-                label="Report",
-                description="Report a user or incident",
-                emoji="📋",
-                value="report"
-            ),
-            discord.SelectOption(
-                label="Help with a Purchase",
-                description="Need help with an order or payment?",
-                emoji="🛒",
-                value="purchase"
-            ),
-            discord.SelectOption(
-                label="Other",
-                description="Anything that doesn't fit above",
-                emoji="📌",
-                value="other"
-            ),
-        ]
-        super().__init__(
-            custom_id="support_ticket_select",
-            placeholder="📂 Select a category...",
-            min_values=1, max_values=1,
-            options=opts
-        )
-
-    async def callback(self, interaction):
-        guild  = interaction.guild
-        author = interaction.user
-        cat    = guild.get_channel(SUPPORT_CATEGORY_ID)
-        if not cat:
-            return await interaction.response.send_message("❌ Category not found.", ephemeral=True)
-
-        v = self.values[0]
-
-        # Determine name, title, and which roles can see the ticket
-        config = {
-            "admin": {
-                "name":  f"admin-{author.name}".replace(" ", "-").lower(),
-                "title": "👑 Talk to Administrator",
-                "roles": [CEO_ROLE_ID, OWNER_ROLE_ID, CO_OWNER_ROLE_ID],
-                "desc":  (f"Hello {author.mention}!\n\n"
-                          "A member of the **Administration** will be with you shortly.\n"
-                          "Please describe your matter below.\n\n"
-                          "*One active ticket at a time.*"),
-                "color": discord.Color.gold(),
-            },
-            "support": {
-                "name":  f"support-{author.name}".replace(" ", "-").lower(),
-                "title": "💬 Support Ticket",
-                "roles": [STAFF_ROLE_ID, MANAGER_ROLE_ID, OWNER_ROLE_ID, CO_OWNER_ROLE_ID],
-                "desc":  (f"Hello {author.mention}!\n\n"
-                          "Our **Support Team** will assist you shortly.\n"
-                          "Please describe your issue below.\n\n"
-                          "*One active ticket at a time.*"),
-                "color": discord.Color.blurple(),
-            },
-            "report": {
-                "name":  f"report-{author.name}".replace(" ", "-").lower(),
-                "title": "📋 Report Ticket",
-                "roles": [OWNER_ROLE_ID, CEO_ROLE_ID],
-                "desc":  (f"Hello {author.mention}!\n\n"
-                          "Please provide full details of the **report** below.\n"
-                          "Include usernames, timestamps and any evidence.\n\n"
-                          "*One active ticket at a time.*"),
-                "color": discord.Color.red(),
-            },
-            "purchase": {
-                "name":  f"purchase-{author.name}".replace(" ", "-").lower(),
-                "title": "🛒 Help with a Purchase",
-                "roles": [CEO_ROLE_ID],
-                "desc":  (f"Hello {author.mention}!\n\n"
-                          "A **CEO** team member will help you with your purchase shortly.\n"
-                          "Please provide your order details below.\n\n"
-                          "*One active ticket at a time.*"),
-                "color": discord.Color.green(),
-            },
-            "other": {
-                "name":  f"other-{author.name}".replace(" ", "-").lower(),
-                "title": "📌 Other Ticket",
-                "roles": [STAFF_ROLE_ID, MANAGER_ROLE_ID, OWNER_ROLE_ID, CEO_ROLE_ID, CO_OWNER_ROLE_ID],
-                "desc":  (f"Hello {author.mention}!\n\n"
-                          "Our team will be with you shortly.\n"
-                          "Please explain your request below.\n\n"
-                          "*One active ticket at a time.*"),
-                "color": discord.Color.from_rgb(20, 20, 40),
-            },
-        }[v]
-
-        ow = {
-            guild.default_role: discord.PermissionOverwrite(view_channel=False),
-            author: discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True),
-        }
-        for rid in config["roles"]:
-            r = guild.get_role(rid)
-            if r:
-                ow[r] = discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
-
-        ch = await guild.create_text_channel(name=config["name"], category=cat, overwrites=ow)
-
-        e = discord.Embed(title=config["title"], description=config["desc"], color=config["color"])
-        e.set_image(url=BANNER_SUPPORT)
-        e.set_thumbnail(url=SERVER_THUMBNAIL_URL)
-        e.set_footer(text=f"{SERVER_NAME} • Support System")
-        await ch.send(embed=e, view=TicketCloseView())
-
-        lc = guild.get_channel(TICKET_LOG_ID)
-        if lc:
-            le = discord.Embed(title="📂 New Support Ticket", color=discord.Color.blue(),
-                               timestamp=discord.utils.utcnow())
-            le.set_thumbnail(url=author.display_avatar.url)
-            le.add_field(name="👤 From",     value=author.mention,      inline=True)
-            le.add_field(name="📋 Category", value=config["title"],     inline=True)
-            le.add_field(name="📁 Channel",  value=ch.mention,          inline=True)
-            le.set_footer(text=f"{SERVER_NAME} • Ticket Log")
-            await lc.send(embed=le)
-
-        await interaction.response.send_message(f"✅ Ticket created: {ch.mention}", ephemeral=True)
-
-
-class SupportTicketPanel(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-        self.add_item(SupportTicketSelect())
-
-# ══════════════════════════════════════════════════════════════
-#  BUY PANEL TICKET
-#  Categories:
-#    • Buy a Product  → CEO, Donate Manager
-#    • Make an Order  → CEO, Creator, Owner, Co-Owner
-# ══════════════════════════════════════════════════════════════
-class BuyTicketSelect(discord.ui.Select):
-    def __init__(self):
-        opts = [
-            discord.SelectOption(
-                label="Buy a Product",
-                description="Purchase a product from our store",
-                emoji="🛍️",
-                value="buy_product"
-            ),
-            discord.SelectOption(
-                label="Make an Order",
-                description="Place a custom order",
-                emoji="📦",
-                value="make_order"
-            ),
-        ]
-        super().__init__(
-            custom_id="buy_ticket_select",
-            placeholder="🛒 Select a category...",
-            min_values=1, max_values=1,
-            options=opts
-        )
-
-    async def callback(self, interaction):
-        guild  = interaction.guild
-        author = interaction.user
-        cat    = guild.get_channel(BUY_PANEL_CATEGORY_ID)
-        if not cat:
-            return await interaction.response.send_message("❌ Category not found.", ephemeral=True)
-
-        v = self.values[0]
-
-        config = {
-            "buy_product": {
-                "name":  f"buy-{author.name}".replace(" ", "-").lower(),
-                "title": "🛍️ Buy a Product",
-                "roles": [CEO_ROLE_ID, DONATE_MANAGER_ROLE_ID],
-                "desc":  (f"Hello {author.mention}!\n\n"
-                          "Thank you for your interest in purchasing a product!\n"
-                          "Please let us know **what you'd like to buy** and a team member will assist you.\n\n"
-                          "*One active ticket at a time.*"),
-                "color": discord.Color.green(),
-            },
-            "make_order": {
-                "name":  f"order-{author.name}".replace(" ", "-").lower(),
-                "title": "📦 Make an Order",
-                "roles": [CEO_ROLE_ID, CREATOR_ROLE_ID, OWNER_ROLE_ID, CO_OWNER_ROLE_ID],
-                "desc":  (f"Hello {author.mention}!\n\n"
-                          "Please describe your **custom order** in as much detail as possible.\n"
-                          "Our team will review it and get back to you shortly.\n\n"
-                          "*One active ticket at a time.*"),
-                "color": discord.Color.from_rgb(255, 165, 0),
-            },
-        }[v]
-
-        ow = {
-            guild.default_role: discord.PermissionOverwrite(view_channel=False),
-            author: discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True),
-        }
-        for rid in config["roles"]:
-            r = guild.get_role(rid)
-            if r:
-                ow[r] = discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
-
-        ch = await guild.create_text_channel(name=config["name"], category=cat, overwrites=ow)
-
-        e = discord.Embed(title=config["title"], description=config["desc"], color=config["color"])
-        e.set_image(url=BANNER_BUY)
-        e.set_thumbnail(url=SERVER_THUMBNAIL_URL)
-        e.set_footer(text=f"{SERVER_NAME} • Buy Panel")
-        await ch.send(embed=e, view=TicketCloseView())
-
-        lc = guild.get_channel(TICKET_LOG_ID)
-        if lc:
-            le = discord.Embed(title="🛒 New Buy Ticket", color=discord.Color.gold(),
-                               timestamp=discord.utils.utcnow())
-            le.set_thumbnail(url=author.display_avatar.url)
-            le.add_field(name="👤 From",     value=author.mention,  inline=True)
-            le.add_field(name="📋 Category", value=config["title"], inline=True)
-            le.add_field(name="📁 Channel",  value=ch.mention,      inline=True)
-            le.set_footer(text=f"{SERVER_NAME} • Ticket Log")
-            await lc.send(embed=le)
-
-        await interaction.response.send_message(f"✅ Ticket created: {ch.mention}", ephemeral=True)
-
-
-class BuyTicketPanel(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-        self.add_item(BuyTicketSelect())
-
-# ══════════════════════════════════════════════════════════════
-#  SERVICES TICKET PANEL
-#  Categories:
-#    • Buy a Service  → CEO
-# ══════════════════════════════════════════════════════════════
-class ServicesTicketSelect(discord.ui.Select):
-    def __init__(self):
-        opts = [
-            discord.SelectOption(
-                label="Buy a Service",
-                description="Purchase a service from Glorious Shop",
-                emoji="⚙️",
-                value="buy_service"
-            ),
-        ]
-        super().__init__(
-            custom_id="services_ticket_select",
-            placeholder="⚙️ Select a service...",
-            min_values=1, max_values=1,
-            options=opts
-        )
-
-    async def callback(self, interaction):
-        guild  = interaction.guild
-        author = interaction.user
-        cat    = guild.get_channel(SERVICES_CATEGORY_ID)
-        if not cat:
-            return await interaction.response.send_message("❌ Category not found.", ephemeral=True)
-
-        name  = f"service-{author.name}".replace(" ", "-").lower()
-        title = "⚙️ Buy a Service"
-        desc  = (f"Hello {author.mention}!\n\n"
-                 "Thank you for your interest in one of our **services**!\n"
-                 "Please describe the service you'd like and our CEO team will be in touch shortly.\n\n"
-                 "*One active ticket at a time.*")
-
-        ow = {
-            guild.default_role: discord.PermissionOverwrite(view_channel=False),
-            author: discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True),
-        }
-        ceo_role = guild.get_role(CEO_ROLE_ID)
-        if ceo_role:
-            ow[ceo_role] = discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
-
-        ch = await guild.create_text_channel(name=name, category=cat, overwrites=ow)
-
-        e = discord.Embed(title=title, description=desc, color=discord.Color.from_rgb(88, 101, 242))
-        e.set_image(url=BANNER_SERVICES)
-        e.set_thumbnail(url=SERVER_THUMBNAIL_URL)
-        e.set_footer(text=f"{SERVER_NAME} • Services")
-        await ch.send(embed=e, view=TicketCloseView())
-
-        lc = guild.get_channel(TICKET_LOG_ID)
-        if lc:
-            le = discord.Embed(title="⚙️ New Services Ticket", color=discord.Color.blurple(),
-                               timestamp=discord.utils.utcnow())
-            le.set_thumbnail(url=author.display_avatar.url)
-            le.add_field(name="👤 From",    value=author.mention, inline=True)
-            le.add_field(name="📁 Channel", value=ch.mention,     inline=True)
-            le.set_footer(text=f"{SERVER_NAME} • Ticket Log")
-            await lc.send(embed=le)
-
-        await interaction.response.send_message(f"✅ Ticket created: {ch.mention}", ephemeral=True)
-
-
-class ServicesTicketPanel(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-        self.add_item(ServicesTicketSelect())
-
-# ══════════════════════════════════════════════════════════════
-#  DUTY SYSTEM
-# ══════════════════════════════════════════════════════════════
-def get_total_seconds(uid: str, now: float) -> float:
-    d = duty_data.get(uid, {})
-    if not isinstance(d, dict):
-        return 0.0
-    total = d.get("total_seconds", 0.0)
-    if "start_time" in d:
-        total += now - d["start_time"]
-    return total
-
-
-class DutyView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-
-    @discord.ui.button(label="🟢 On Duty", style=discord.ButtonStyle.green,
-                       custom_id="duty_on", row=0)
-    async def on_duty(self, interaction, button):
-        uid = str(interaction.user.id)
-        dr  = interaction.guild.get_role(DUTY_ROLE_ID)
-        if dr in interaction.user.roles:
-            return await interaction.response.send_message("⚠️ You are already On Duty!", ephemeral=True)
-        if dr:
-            try:
-                await interaction.user.add_roles(dr)
-            except:
-                pass
-        if uid not in duty_data or not isinstance(duty_data[uid], dict):
-            duty_data[uid] = {"total_seconds": 0.0}
-        duty_data[uid]["start_time"] = time.time()
-        save_duty_data(duty_data)
-
-        log = bot.get_channel(DUTY_LOG_CHANNEL_ID)
-        if log:
-            e = discord.Embed(title="🟢 On Duty", color=discord.Color.green(),
-                              timestamp=discord.utils.utcnow())
-            e.set_thumbnail(url=interaction.user.display_avatar.url)
-            e.description = f"{interaction.user.mention} is now **On Duty**."
-            e.set_footer(text=f"{SERVER_NAME} • Duty Log | User ID: {interaction.user.id}")
-            await log.send(embed=e)
-
-        await interaction.response.send_message("✅ You are now **On Duty**!", ephemeral=True)
-
-    @discord.ui.button(label="🔴 Off Duty", style=discord.ButtonStyle.red,
-                       custom_id="duty_off", row=0)
-    async def off_duty(self, interaction, button):
-        uid = str(interaction.user.id)
-        dr  = interaction.guild.get_role(DUTY_ROLE_ID)
-        if dr not in interaction.user.roles:
-            return await interaction.response.send_message("⚠️ You are not On Duty!", ephemeral=True)
-        if dr:
-            try:
-                await interaction.user.remove_roles(dr)
-            except:
-                pass
-
-        ss = 0.0
-        if uid in duty_data and isinstance(duty_data[uid], dict) and "start_time" in duty_data[uid]:
-            ss = time.time() - duty_data[uid]["start_time"]
-            duty_data[uid]["total_seconds"] = duty_data[uid].get("total_seconds", 0.0) + ss
-            duty_data[uid].pop("start_time", None)
-            save_duty_data(duty_data)
-
-        h, r   = divmod(int(ss), 3600)
-        m, s2  = divmod(r, 60)
-        ds = f"{h}h {m}m {s2}s"
-        total  = duty_data.get(uid, {}).get("total_seconds", 0.0)
-        th, tr = divmod(int(total), 3600)
-        tm2, _ = divmod(tr, 60)
-
-        log = bot.get_channel(DUTY_LOG_CHANNEL_ID)
-        if log:
-            e = discord.Embed(title="🔴 Off Duty", color=discord.Color.red(),
-                              timestamp=discord.utils.utcnow())
-            e.set_thumbnail(url=interaction.user.display_avatar.url)
-            e.description = f"{interaction.user.mention} went **Off Duty**."
-            e.add_field(name="⏱ Session", value=ds,              inline=True)
-            e.add_field(name="📊 Total",  value=f"{th}h {tm2}m", inline=True)
-            e.set_footer(text=f"{SERVER_NAME} • Duty Log | User ID: {interaction.user.id}")
-            await log.send(embed=e)
-
-        await interaction.response.send_message(
-            f"✅ **Off Duty!** Session: **{ds}** | Total: **{th}h {tm2}m**", ephemeral=True)
-
-    @discord.ui.button(label="📋 Duty Status", style=discord.ButtonStyle.blurple,
-                       custom_id="duty_status", row=1)
-    async def duty_status(self, interaction, button):
-        guild = interaction.guild
-        dr    = guild.get_role(DUTY_ROLE_ID)
-        now   = time.time()
-        on_duty_members = []
-        if dr:
-            for m in guild.members:
-                if dr in m.roles and not m.bot:
-                    uid = str(m.id)
-                    if uid in duty_data and "start_time" in duty_data[uid]:
-                        elapsed = now - duty_data[uid]["start_time"]
-                        hh, rem = divmod(int(elapsed), 3600)
-                        mn, sc  = divmod(rem, 60)
-                        on_duty_members.append((m, f"{hh}h {mn}m {sc}s"))
-                    else:
-                        on_duty_members.append((m, "0h 0m 0s"))
-
-        e = discord.Embed(title="📋 Duty Status", color=discord.Color.blurple(),
-                          timestamp=discord.utils.utcnow())
-        if on_duty_members:
-            e.description = "\n".join(f"🟢 {m.mention} — `{dur}`" for m, dur in on_duty_members)
-            e.set_footer(text=f"{len(on_duty_members)} member(s) on duty | {SERVER_NAME}")
-        else:
-            e.description = "❌ Nobody is On Duty right now."
-            e.set_footer(text=f"{SERVER_NAME} • Duty Status")
-        await interaction.response.send_message(embed=e, ephemeral=True)
-
-    @discord.ui.button(label="🏆 Leaderboard", style=discord.ButtonStyle.grey,
-                       custom_id="duty_leaderboard_btn", row=1)
-    async def leaderboard_btn(self, interaction, button):
-        guild = interaction.guild
-        now   = time.time()
-        totals = []
-        for uid, d in duty_data.items():
-            if not isinstance(d, dict):
-                continue
-            total = get_total_seconds(uid, now)
-            if total > 0:
-                totals.append((uid, total))
-        totals.sort(key=lambda x: x[1], reverse=True)
-
-        medals = ["🥇", "🥈", "🥉"]
-        e = discord.Embed(title="🏆 Duty Leaderboard", color=discord.Color.gold(),
-                          timestamp=discord.utils.utcnow())
-        desc = ""
-        dr   = guild.get_role(DUTY_ROLE_ID)
-        for i, (uid, secs) in enumerate(totals[:10]):
-            member = guild.get_member(int(uid))
-            name   = member.display_name if member else f"User {uid}"
-            hh, rem = divmod(int(secs), 3600)
-            mn, _   = divmod(rem, 60)
-            medal   = medals[i] if i < 3 else f"**#{i+1}**"
-            is_on   = " 🟢" if (member and dr and dr in member.roles) else ""
-            desc   += f"{medal} {name}{is_on} — `{hh}h {mn}m`\n"
-
-        e.description = desc or "No duty data yet."
-        e.set_footer(text=f"🟢 = Currently on duty • Times never reset | {SERVER_NAME}")
-        await interaction.response.send_message(embed=e, ephemeral=True)
-
-# ══════════════════════════════════════════════════════════════
-#  SUGGESTION SYSTEM
-# ══════════════════════════════════════════════════════════════
-class SuggestionModal(discord.ui.Modal, title="💡 Make a Suggestion"):
-    suggestion_input = discord.ui.TextInput(
-        label="Your suggestion",
-        style=discord.TextStyle.paragraph,
-        placeholder="Write your suggestion here...",
-        required=True,
-        max_length=1000
-    )
-
-    async def on_submit(self, interaction):
-        ch = interaction.guild.get_channel(SUGGESTION_CHANNEL_ID)
-        if not ch:
-            return await interaction.response.send_message("❌ Channel not found.", ephemeral=True)
-        e = discord.Embed(title="💡 New Suggestion", description=self.suggestion_input.value,
-                          color=discord.Color.from_rgb(88, 101, 242), timestamp=discord.utils.utcnow())
-        e.set_author(name=interaction.user.display_name,
-                     icon_url=interaction.user.avatar.url if interaction.user.avatar else None)
-        e.set_thumbnail(url=SERVER_THUMBNAIL_URL)
-        e.set_footer(text=f"User ID: {interaction.user.id} • {SERVER_NAME}")
-        msg = await ch.send(embed=e)
-        await msg.add_reaction("👍")
-        await msg.add_reaction("👎")
-        await interaction.response.send_message("✅ Suggestion submitted!", ephemeral=True)
-
-
-class SuggestionPanelView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-
-    @discord.ui.button(label="💡 Make a Suggestion", style=discord.ButtonStyle.blurple,
-                       custom_id="make_suggestion_btn")
-    async def make_suggestion(self, interaction, button):
-        await interaction.response.send_modal(SuggestionModal())
-
-# ══════════════════════════════════════════════════════════════
-#  REVIEW SYSTEM
-# ══════════════════════════════════════════════════════════════
-class ReviewModal(discord.ui.Modal, title="⭐ Write a Review"):
-    review_input = discord.ui.TextInput(
-        label="Your review",
-        style=discord.TextStyle.paragraph,
-        placeholder="Share your experience...",
-        required=True,
-        max_length=1000
-    )
-
-    def __init__(self, stars):
-        super().__init__()
-        self.stars = stars
-
-    async def on_submit(self, interaction):
-        ch = interaction.guild.get_channel(REVIEW_CHANNEL_ID)
-        if not ch:
-            return await interaction.response.send_message("❌ Channel not found.", ephemeral=True)
-        sd = "⭐" * self.stars + "☆" * (5 - self.stars)
-        cm = {
-            1: discord.Color.red(),
-            2: discord.Color.orange(),
-            3: discord.Color.yellow(),
-            4: discord.Color.green(),
-            5: discord.Color.from_rgb(255, 215, 0)
-        }
-        e = discord.Embed(title="⭐ New Review",
-                          color=cm.get(self.stars, discord.Color.blurple()),
-                          timestamp=discord.utils.utcnow())
-        e.add_field(name="Rating",  value=sd,                    inline=False)
-        e.add_field(name="Comment", value=self.review_input.value, inline=False)
-        e.set_author(name=interaction.user.display_name,
-                     icon_url=interaction.user.avatar.url if interaction.user.avatar else None)
-        e.set_thumbnail(url=SERVER_THUMBNAIL_URL)
-        e.set_footer(text=f"User ID: {interaction.user.id} • {SERVER_NAME}")
-        await ch.send(embed=e)
-        await interaction.response.send_message(f"✅ Review submitted! ({sd})", ephemeral=True)
-
-
-class StarSelect(discord.ui.Select):
-    def __init__(self):
-        opts = [
-            discord.SelectOption(label="⭐ 1 Star",     emoji="⭐", value="1"),
-            discord.SelectOption(label="⭐⭐ 2 Stars",   emoji="⭐", value="2"),
-            discord.SelectOption(label="⭐⭐⭐ 3 Stars", emoji="⭐", value="3"),
-            discord.SelectOption(label="⭐⭐⭐⭐ 4 Stars",  emoji="⭐", value="4"),
-            discord.SelectOption(label="⭐⭐⭐⭐⭐ 5 Stars", emoji="⭐", value="5"),
-        ]
-        super().__init__(custom_id="star_select_review", placeholder="⭐ Select your rating...",
-                         min_values=1, max_values=1, options=opts)
-
-    async def callback(self, interaction):
-        await interaction.response.send_modal(ReviewModal(int(self.values[0])))
-
-
-class StarSelectView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-        self.add_item(StarSelect())
-
-
-class ReviewPanelView(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-
-    @discord.ui.button(label="⭐ Write a Review", style=discord.ButtonStyle.blurple,
-                       custom_id="make_review_btn")
-    async def make_review(self, interaction, button):
-        e = discord.Embed(title="⭐ Select Your Rating",
-                          description="Choose your star rating, then write your review!",
-                          color=discord.Color.from_rgb(255, 215, 0))
-        await interaction.response.send_message(embed=e, view=StarSelectView(), ephemeral=True)
-
-# ══════════════════════════════════════════════════════════════
-#  SECURITY — BOT VERIFICATION
-# ══════════════════════════════════════════════════════════════
-class BotVerificationView(discord.ui.View):
-    def __init__(self, bot_member):
-        super().__init__(timeout=None)
-        self.bot_member = bot_member
-        self.accept_btn.custom_id = f"bot_accept_{bot_member.id}"
-        self.deny_btn.custom_id   = f"bot_deny_{bot_member.id}"
-
-    @discord.ui.button(label="✅ Accept Bot", style=discord.ButtonStyle.green,
-                       custom_id="bot_accept_placeholder")
-    async def accept_btn(self, interaction, button):
-        if not interaction.user.guild_permissions.administrator:
-            return await interaction.response.send_message("❌ Admins only.", ephemeral=True)
-        pending_bots.pop(str(self.bot_member.id), None)
-        try:
-            for ch in interaction.guild.channels:
-                try:
-                    await ch.set_permissions(self.bot_member, overwrite=None, reason="Bot accepted")
-                except:
-                    pass
-        except:
-            pass
-        e = discord.Embed(title="✅ Bot Accepted",
-                          description=f"**{self.bot_member}** was accepted by {interaction.user.mention}.",
-                          color=discord.Color.green(), timestamp=discord.utils.utcnow())
-        await interaction.message.edit(embed=e, view=None)
-        await interaction.response.send_message("✅ Bot accepted!", ephemeral=True)
-
-    @discord.ui.button(label="❌ Deny Bot (Kick)", style=discord.ButtonStyle.red,
-                       custom_id="bot_deny_placeholder")
-    async def deny_btn(self, interaction, button):
-        if not interaction.user.guild_permissions.administrator:
-            return await interaction.response.send_message("❌ Admins only.", ephemeral=True)
-        kicked = False
-        try:
-            await self.bot_member.kick(reason=f"Bot denied by {interaction.user}")
-            kicked = True
-        except:
-            pass
-        pending_bots.pop(str(self.bot_member.id), None)
-        e = discord.Embed(title="❌ Bot Denied & Kicked",
-                          description=f"**{self.bot_member}** kicked by {interaction.user.mention}.\nKick: {'✅' if kicked else '❌'}",
-                          color=discord.Color.red(), timestamp=discord.utils.utcnow())
-        await interaction.message.edit(embed=e, view=None)
-        await interaction.response.send_message("❌ Bot denied and kicked.", ephemeral=True)
-
-# ══════════════════════════════════════════════════════════════
-#  SECURITY — MASS BAN/KICK TRACKER
-# ══════════════════════════════════════════════════════════════
-@bot.event
-async def on_member_ban(guild, user):
-    await _track_mass_action(guild, user, "ban")
-
-
-@bot.event
-async def on_member_remove(member):
-    await asyncio.sleep(1)
-    async for entry in member.guild.audit_logs(limit=3, action=discord.AuditLogAction.kick):
-        if (entry.target.id == member.id and
-                (datetime.datetime.utcnow() - entry.created_at.replace(tzinfo=None)).seconds < 5):
-            await _track_mass_action(member.guild, entry.user, "kick")
-            break
-
-    uid = str(member.id)
-    if uid in invite_data and "invited_by" in invite_data[uid]:
-        iid = invite_data[uid]["invited_by"]
-        if iid in invite_data:
-            invite_data[iid]["left"]  = invite_data[iid].get("left", 0) + 1
-            invite_data[iid]["real"]  = max(0, invite_data[iid].get("total", 0) - invite_data[iid].get("left", 0))
-            save_invite_data(invite_data)
-
-    await update_voice_channels(member.guild)
-
-    log = bot.get_channel(MEMBER_LEAVE_LOG_CHANNEL_ID)
-    if log:
-        roles = [r.mention for r in member.roles if r.name != "@everyone"]
-        e = discord.Embed(title="🔴 Member Left", color=discord.Color.red(),
-                          timestamp=discord.utils.utcnow())
-        e.set_thumbnail(url=member.display_avatar.url)
-        e.add_field(name="👤 User",         value=f"{member.mention} (`{member.id}`)", inline=True)
-        e.add_field(name="📛 Username",     value=str(member),                        inline=True)
-        e.add_field(name="👥 Members now",  value=str(member.guild.member_count),     inline=True)
-        e.add_field(name="🎭 Roles",        value=" ".join(roles) if roles else "None", inline=False)
-        e.set_footer(text=f"{SERVER_NAME} • Member Log | User ID: {member.id}")
-        await log.send(embed=e)
-
-
-async def _track_mass_action(guild, moderator, action_type):
-    uid = str(moderator.id) if hasattr(moderator, "id") else str(moderator)
-    now = time.time()
-    if uid not in ban_kick_tracker:
-        ban_kick_tracker[uid] = []
-    ban_kick_tracker[uid].append(now)
-    ban_kick_tracker[uid] = [t for t in ban_kick_tracker[uid] if now - t < 10]
-    if len(ban_kick_tracker[uid]) >= 3:
-        ban_kick_tracker[uid] = []
-        mm     = guild.get_member(int(uid))
-        exempt = [CEO_ROLE_ID, OWNER_ROLE_ID]
-        is_ex  = mm and any(r.id in exempt for r in mm.roles)
-        if mm and not is_ex:
-            try:
-                await mm.timeout(datetime.timedelta(weeks=1), reason=f"Mass {action_type}")
-            except:
-                pass
-            e = discord.Embed(title=f"⚠️ Mass {action_type.upper()} Detected!",
-                              description=f"{mm.mention} performed mass {action_type}.\n**1 week timeout** applied.",
-                              color=discord.Color.dark_red(), timestamp=discord.utils.utcnow())
-            await send_security_alert(guild, e, ping=True)
-
-# ══════════════════════════════════════════════════════════════
-#  ON MESSAGE
-# ══════════════════════════════════════════════════════════════
-@bot.event
-async def on_message(message):
-    if message.author.bot:
-        await bot.process_commands(message)
-        return
-
-    guild  = message.guild
-    author = message.author
-
-    # Token detection
-    if guild and TOKEN_PATTERN.search(message.content):
-        try:
-            await message.delete()
-        except:
-            pass
-        e = discord.Embed(
-            title="🔑 TOKEN DETECTED & DELETED!",
-            description=(f"{author.mention} sent something that looks like a **Bot Token**!\n"
-                         "The message has been deleted.\n\n"
-                         "⚠️ **If it's your token, regenerate it IMMEDIATELY!**"),
-            color=discord.Color.dark_red(), timestamp=discord.utils.utcnow()
-        )
-        e.set_thumbnail(url=author.display_avatar.url)
-        e.add_field(name="👤 User",    value=f"{author.mention} (`{author.id}`)", inline=True)
-        e.add_field(name="📢 Channel", value=message.channel.mention,            inline=True)
-        e.set_footer(text=f"{SERVER_NAME} • Security Log")
-        await send_security_alert(guild, e, ping=True)
-        return
-
-    # Link detection
-    if guild and URL_PATTERN.search(message.content):
-        exempt = [CEO_ROLE_ID, OWNER_ROLE_ID]
-        is_ex  = any(r.id in exempt for r in author.roles)
-        if not is_ex and not author.guild_permissions.administrator:
-            try:
-                await message.delete()
-            except:
-                pass
-            try:
-                await author.timeout(datetime.timedelta(hours=1), reason="Link detected")
-            except:
-                pass
-            e = discord.Embed(
-                title="🔗 Link Detected & Deleted",
-                description=f"{author.mention} sent a link and received a **1 hour timeout**.",
-                color=discord.Color.orange(), timestamp=discord.utils.utcnow()
+console.log(">>> GLORIOUS SHOP BOT LOADED <<<");
+
+const {
+  Client, GatewayIntentBits, Partials, Collection,
+  EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder,
+  ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder,
+  TextInputStyle, PermissionsBitField, AuditLogEvent,
+  ActivityType, Status,
+} = require("discord.js");
+const express = require("express");
+const fs = require("fs");
+
+// ══════════════════════════════════════════════════════════════
+//  KEEP ALIVE
+// ══════════════════════════════════════════════════════════════
+const app = express();
+app.get("/", (_, res) => res.send("OK"));
+app.listen(10000, "0.0.0.0", () => console.log("Keep-alive on :10000"));
+
+// ══════════════════════════════════════════════════════════════
+//  BOT INIT
+// ══════════════════════════════════════════════════════════════
+const TOKEN    = process.env.TOKEN;
+const GUILD_ID = "1490079978300117212";
+
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildModeration,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildPresences,
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildInvites,
+    GatewayIntentBits.DirectMessages,
+  ],
+  partials: [Partials.Channel, Partials.Message, Partials.GuildMember],
+});
+
+// ══════════════════════════════════════════════════════════════
+//  ROLE IDs
+// ══════════════════════════════════════════════════════════════
+const CEO_ROLE_ID            = "1490084094749573151";
+const OWNER_ROLE_ID          = "1490084247682285699";
+const CO_OWNER_ROLE_ID       = "1490136469287993464";
+const CREATOR_ROLE_ID        = "1490134524221460621";
+const MANAGER_ROLE_ID        = "1490134503249936525";
+const STAFF_ROLE_ID          = "1490088402656170045";
+const DONATE_MANAGER_ROLE_ID = "1490134506793861193";
+
+const AUTOROLE_ID  = "1490134521687969864";
+const DUTY_ROLE_ID = "1490338840395649266";
+
+// ══════════════════════════════════════════════════════════════
+//  CHANNEL IDs
+// ══════════════════════════════════════════════════════════════
+const SUPPORT_CATEGORY_ID  = "1490134558182473959";
+const BUY_PANEL_CATEGORY_ID = "1490134559315197992";
+const SERVICES_CATEGORY_ID  = "1495232331131125791";
+
+const BOT_LOG_ID                    = "1490134570056683670";
+const MESSAGE_EDIT_LOG_CHANNEL_ID   = "1490134573986873475";
+const MESSAGE_DELETE_LOG_CHANNEL_ID = "1490134573986873475";
+const MEMBER_JOIN_LOG_CHANNEL_ID    = "1490134577933582387";
+const MEMBER_LEAVE_LOG_CHANNEL_ID   = "1490134577933582387";
+const ROLE_UPDATE_LOG_CHANNEL_ID    = "1491807147133108294";
+const VOICE_LOG_CHANNEL_ID          = "1490134572225134702";
+const CHANNEL_CREATE_LOG_CHANNEL_ID = "1491807225084121321";
+const CHANNEL_DELETE_LOG_CHANNEL_ID = "1491807225084121321";
+const ROLE_CREATE_LOG_CHANNEL_ID    = "1491807147133108294";
+const ROLE_DELETE_LOG_CHANNEL_ID    = "1491807147133108294";
+const TICKET_LOG_ID                 = "1490134569025011784";
+const DUTY_LOG_CHANNEL_ID           = "1490341619059261510";
+const DUTY_LEADERBOARD_CHANNEL_ID   = "1490341549719162971";
+const SECURITY_LOG_CHANNEL_ID       = "1490340271156756490";
+const SUGGESTION_CHANNEL_ID         = "1491916043709579284";
+const REVIEW_CHANNEL_ID             = "1490702704782217381";
+const INVITE_LOG_CHANNEL_ID         = "1490493231107145820";
+
+const MEMBERS_CHANNEL_ID = "1490134565145022544";
+const BOTS_CHANNEL_ID    = "1490134568009990154";
+const ONLINE_CHANNEL_ID  = "1490134566558502994";
+const BOOSTS_CHANNEL_ID  = "1490134571147071538";
+
+const TEMP_VOICE_CATEGORY_ID = "1490134557272313947";
+const TEMP_VOICE_CHANNEL_ID  = "1490134590608642179";
+
+// ══════════════════════════════════════════════════════════════
+//  BRANDING
+// ══════════════════════════════════════════════════════════════
+const SERVER_NAME          = "Glorious Shop";
+const SERVER_THUMBNAIL_URL = "https://i.imgur.com/F6vMnVL.jpeg";
+const BANNER_SUPPORT       = "https://i.imgur.com/YL0btaL.jpeg";
+const BANNER_BUY           = "https://i.imgur.com/YL0btaL.jpeg";
+const BANNER_SERVICES      = "https://i.imgur.com/YL0btaL.jpeg";
+const BANNER_SUGGEST       = "https://i.imgur.com/YL0btaL.jpeg";
+const BANNER_REVIEW        = "https://i.imgur.com/YL0btaL.jpeg";
+
+// ══════════════════════════════════════════════════════════════
+//  PERMISSION HELPERS
+// ══════════════════════════════════════════════════════════════
+function hasRole(member, ...roleIds) {
+  return roleIds.some(id => member.roles.cache.has(id));
+}
+const isCeo            = m => hasRole(m, CEO_ROLE_ID);
+const isOwnerOrAbove   = m => hasRole(m, CEO_ROLE_ID, OWNER_ROLE_ID, CO_OWNER_ROLE_ID);
+const isStaffOrAbove   = m => hasRole(m, CEO_ROLE_ID, OWNER_ROLE_ID, CO_OWNER_ROLE_ID, CREATOR_ROLE_ID, MANAGER_ROLE_ID, STAFF_ROLE_ID);
+const isManagerOrAbove = m => hasRole(m, CEO_ROLE_ID, OWNER_ROLE_ID, CO_OWNER_ROLE_ID, CREATOR_ROLE_ID, MANAGER_ROLE_ID);
+const hasModPerms      = m => m.permissions.has(PermissionsBitField.Flags.KickMembers) ||
+                              m.permissions.has(PermissionsBitField.Flags.BanMembers) ||
+                              isStaffOrAbove(m);
+
+// ══════════════════════════════════════════════════════════════
+//  DATA FILES
+// ══════════════════════════════════════════════════════════════
+const DUTY_FILE     = "duty.json";
+const SECURITY_FILE = "security.json";
+const INVITE_FILE   = "invites.json";
+
+function loadJSON(file, def = {}) {
+  try {
+    if (!fs.existsSync(file)) { fs.writeFileSync(file, JSON.stringify(def, null, 4)); return def; }
+    return JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch { return def; }
+}
+function saveJSON(file, data) {
+  fs.writeFileSync(file, JSON.stringify(data, null, 4));
+}
+
+let dutyData     = loadJSON(DUTY_FILE);
+let securityData = loadJSON(SECURITY_FILE, { spam: {}, ban_kick_tracker: {}, alts: [] });
+let inviteData   = loadJSON(INVITE_FILE);
+const inviteCache = new Map();
+
+let ALT_ACCOUNT_AGE_DAYS = 30;
+let ALT_AUTO_KICK        = true;
+const WHITELISTED_BOT_IDS = new Set();
+
+const URL_PATTERN   = /(https?:\/\/|www\.)\S+|discord\.gg\/\S+/gi;
+const TOKEN_PATTERN = /[MNO][a-zA-Z0-9_-]{23,25}\.[a-zA-Z0-9_-]{6}\.[a-zA-Z0-9_-]{27,38}/;
+
+const spamTracker    = {};
+const banKickTracker = {};
+const pendingBots    = {};
+
+// ══════════════════════════════════════════════════════════════
+//  DUTY HELPERS
+// ══════════════════════════════════════════════════════════════
+function getTotalSeconds(uid, now) {
+  const d = dutyData[uid];
+  if (!d || typeof d !== "object") return 0;
+  let total = d.total_seconds || 0;
+  if (d.start_time) total += now - d.start_time;
+  return total;
+}
+
+function formatDuration(secs) {
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = Math.floor(secs % 60);
+  return `${h}h ${m}m ${s}s`;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SECURITY ALERT HELPER
+// ══════════════════════════════════════════════════════════════
+async function sendSecurityAlert(guild, embed, ping = true) {
+  const ch = guild.channels.cache.get(SECURITY_LOG_CHANNEL_ID);
+  if (!ch) return;
+  const ceoRole = guild.roles.cache.get(CEO_ROLE_ID);
+  const content = ping && ceoRole ? ceoRole.toString() : null;
+  await ch.send({ content, embeds: [embed] }).catch(() => {});
+}
+
+// ══════════════════════════════════════════════════════════════
+//  VOICE COUNTERS
+// ══════════════════════════════════════════════════════════════
+async function updateVoiceChannels(guild) {
+  const members = await guild.members.fetch().catch(() => guild.members.cache);
+  const updates = [
+    [MEMBERS_CHANNEL_ID, `👤 Members: ${members.filter(m => !m.user.bot).size}`],
+    [BOTS_CHANNEL_ID,    `🤖 Bots: ${members.filter(m => m.user.bot).size}`],
+    [ONLINE_CHANNEL_ID,  `🟢 Online: ${members.filter(m => m.presence?.status !== "offline" && m.presence?.status).size}`],
+    [BOOSTS_CHANNEL_ID,  `🚀 Boosts: ${guild.premiumSubscriptionCount || 0}`],
+  ];
+  for (const [id, name] of updates) {
+    const ch = guild.channels.cache.get(id);
+    if (ch) await ch.setName(name).catch(() => {});
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  MASS BAN/KICK TRACKER
+// ══════════════════════════════════════════════════════════════
+async function trackMassAction(guild, moderator, actionType) {
+  if (!moderator) return;
+  const uid = moderator.id;
+  const now = Date.now() / 1000;
+  if (!banKickTracker[uid]) banKickTracker[uid] = [];
+  banKickTracker[uid].push(now);
+  banKickTracker[uid] = banKickTracker[uid].filter(t => now - t < 10);
+
+  if (banKickTracker[uid].length >= 3) {
+    banKickTracker[uid] = [];
+    const mm     = guild.members.cache.get(uid);
+    const exempt = [CEO_ROLE_ID, OWNER_ROLE_ID];
+    const isEx   = mm && exempt.some(r => mm.roles.cache.has(r));
+    if (mm && !isEx) {
+      await mm.timeout(7 * 24 * 60 * 60 * 1000, `Mass ${actionType}`).catch(() => {});
+      const e = new EmbedBuilder()
+        .setTitle(`⚠️ Mass ${actionType.toUpperCase()} Detected!`)
+        .setDescription(`${mm} performed mass ${actionType}.\n**1 week timeout** applied.`)
+        .setColor(0x8B0000)
+        .setTimestamp();
+      await sendSecurityAlert(guild, e, true);
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  TICKET CHANNEL CREATION HELPER
+// ══════════════════════════════════════════════════════════════
+async function createTicketChannel(interaction, { categoryId, name, title, desc, color, roleIds, banner, footer }) {
+  const guild  = interaction.guild;
+  const author = interaction.user;
+  const member = interaction.member;
+  const cat    = guild.channels.cache.get(categoryId);
+  if (!cat) return interaction.reply({ content: "❌ Category not found.", ephemeral: true });
+
+  const overwrites = [
+    { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
+    { id: author.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory] },
+  ];
+  for (const rid of roleIds) {
+    const r = guild.roles.cache.get(rid);
+    if (r) overwrites.push({ id: r.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory] });
+  }
+
+  const ch = await guild.channels.create({
+    name,
+    parent: cat.id,
+    permissionOverwrites: overwrites,
+  });
+
+  const embed = new EmbedBuilder()
+    .setTitle(title)
+    .setDescription(desc)
+    .setColor(color)
+    .setImage(banner)
+    .setThumbnail(SERVER_THUMBNAIL_URL)
+    .setFooter({ text: footer });
+
+  const closeRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId("close_ticket_button").setLabel("🔒 Close Ticket").setStyle(ButtonStyle.Danger)
+  );
+  await ch.send({ embeds: [embed], components: [closeRow] });
+
+  const lc = guild.channels.cache.get(TICKET_LOG_ID);
+  if (lc) {
+    const le = new EmbedBuilder()
+      .setTitle(`📂 New Ticket — ${title}`)
+      .setColor(0x0099ff)
+      .setThumbnail(author.displayAvatarURL())
+      .addFields(
+        { name: "👤 From",     value: `${author}`, inline: true },
+        { name: "📋 Category", value: title,        inline: true },
+        { name: "📁 Channel",  value: `${ch}`,      inline: true },
+      )
+      .setFooter({ text: `${SERVER_NAME} • Ticket Log` })
+      .setTimestamp();
+    await lc.send({ embeds: [le] });
+  }
+
+  await interaction.reply({ content: `✅ Ticket created: ${ch}`, ephemeral: true });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  INTERACTION HANDLER
+// ══════════════════════════════════════════════════════════════
+client.on("interactionCreate", async interaction => {
+  try {
+    // ── BUTTONS ──────────────────────────────────────────────
+    if (interaction.isButton()) {
+      // Close Ticket
+      if (interaction.customId === "close_ticket_button") {
+        const lc = interaction.guild.channels.cache.get(TICKET_LOG_ID);
+        if (lc) {
+          const e = new EmbedBuilder()
+            .setTitle("❌ Ticket Closed")
+            .setColor(0xff0000)
+            .setThumbnail(interaction.user.displayAvatarURL())
+            .addFields(
+              { name: "🔒 Closed by", value: `${interaction.user}`,          inline: true },
+              { name: "📁 Channel",   value: interaction.channel.name,        inline: true },
             )
-            e.set_thumbnail(url=author.display_avatar.url)
-            e.add_field(name="👤 User",    value=f"{author.mention} (`{author.id}`)", inline=True)
-            e.add_field(name="📢 Channel", value=message.channel.mention,            inline=True)
-            e.set_footer(text=f"{SERVER_NAME} • Security Log")
-            await send_security_alert(guild, e, ping=False)
-            return
-
-    # Spam detection
-    if guild:
-        uid = str(author.id)
-        now = time.time()
-        if uid not in spam_tracker:
-            spam_tracker[uid] = []
-        spam_tracker[uid].append(now)
-        spam_tracker[uid] = [t for t in spam_tracker[uid] if now - t < 5]
-        if len(spam_tracker[uid]) >= 5:
-            spam_tracker[uid] = []
-            if not author.guild_permissions.administrator:
-                try:
-                    await author.timeout(datetime.timedelta(minutes=10), reason="Spam")
-                except:
-                    pass
-                e = discord.Embed(
-                    title="🚫 Spam Detected",
-                    description=f"{author.mention} was spamming and received a **10 minute timeout**.",
-                    color=discord.Color.red(), timestamp=discord.utils.utcnow()
-                )
-                e.set_thumbnail(url=author.display_avatar.url)
-                e.add_field(name="👤 User",    value=f"{author.mention} (`{author.id}`)", inline=True)
-                e.add_field(name="📢 Channel", value=message.channel.mention,            inline=True)
-                e.set_footer(text=f"{SERVER_NAME} • Security Log")
-                await send_security_alert(guild, e, ping=False)
-
-    await bot.process_commands(message)
-
-# ══════════════════════════════════════════════════════════════
-#  ON MEMBER JOIN
-# ══════════════════════════════════════════════════════════════
-@bot.event
-async def on_member_join(member):
-    guild = member.guild
-
-    # Bot verification flow
-    if member.bot:
-        if member.id in WHITELISTED_BOT_IDS:
-            return
-        try:
-            for ch in guild.channels:
-                try:
-                    await ch.set_permissions(
-                        member,
-                        send_messages=False,
-                        read_messages=False,
-                        connect=False,
-                        speak=False,
-                        reason="Bot pending verification"
-                    )
-                except:
-                    pass
-        except:
-            pass
-        is_v  = bool(member.public_flags and discord.PublicUserFlags.verified_bot in member.public_flags)
-        bt    = "✅ Verified Bot" if is_v else "⚠️ Unverified / Custom Bot"
-        color = discord.Color.yellow() if is_v else discord.Color.dark_red()
-        e = discord.Embed(
-            title=f"🤖 New Bot {'(UNVERIFIED ⚠️)' if not is_v else '(Verified)'}",
-            description=(f"**{member}** ({member.mention}) joined.\n\n"
-                         f"**Type:** {bt}\n**ID:** `{member.id}`\n"
-                         f"**Created:** <t:{int(member.created_at.timestamp())}:F>\n\n"
-                         "⚠️ Zero permissions until accepted."),
-            color=color, timestamp=discord.utils.utcnow()
-        )
-        e.set_thumbnail(url=member.display_avatar.url)
-        e.set_footer(text=f"{SERVER_NAME} • Security Log")
-        sl = bot.get_channel(SECURITY_LOG_CHANNEL_ID)
-        if sl:
-            owner_role = guild.get_role(OWNER_ROLE_ID)
-            c = owner_role.mention if owner_role else None
-            msg = await sl.send(content=c, embed=e, view=BotVerificationView(member))
-            pending_bots[str(member.id)] = msg.id
-        return
-
-    # Alt account detection
-    age = (datetime.datetime.utcnow() - member.created_at.replace(tzinfo=None)).days
-    if age < ALT_ACCOUNT_AGE_DAYS:
-        e = discord.Embed(title="🚨 ALT ACCOUNT DETECTED!", color=discord.Color.dark_red(),
-                          timestamp=discord.utils.utcnow())
-        e.set_thumbnail(url=member.display_avatar.url)
-        e.add_field(name="👤 User",    value=f"{member.mention} (`{member.id}`)", inline=False)
-        e.add_field(name="📅 Age",     value=f"**{age} days**",                  inline=True)
-        e.add_field(name="📆 Created", value=f"<t:{int(member.created_at.timestamp())}:F>", inline=True)
-        if ALT_AUTO_KICK:
-            try:
-                await member.kick(reason=f"Alt account — age: {age} days")
-                e.add_field(name="⚡ Action", value="✅ **Auto-kicked**", inline=False)
-            except Exception as err:
-                e.add_field(name="⚡ Action", value=f"❌ Failed: {err}", inline=False)
-        else:
-            e.add_field(name="⚡ Action", value="⚠️ Alert only", inline=False)
-        e.set_footer(text=f"{SERVER_NAME} • Security Log")
-        await send_security_alert(guild, e, ping=True)
-        if ALT_AUTO_KICK:
-            return
-
-    # Auto-role
-    r = guild.get_role(AUTOROLE_ID)
-    if r:
-        try:
-            await member.add_roles(r)
-        except:
-            pass
-
-    # Invite tracking
-    try:
-        ni  = await guild.invites()
-        nim = {i.code: i.uses for i in ni}
-        inviter = None
-        for code, ou in invite_cache.get(guild.id, {}).items():
-            if nim.get(code, 0) > ou:
-                for i in ni:
-                    if i.code == code:
-                        inviter = i.inviter
-                        break
-                break
-        invite_cache[guild.id] = nim
-        if inviter:
-            iid = str(inviter.id)
-            mid = str(member.id)
-            if mid not in invite_data:
-                invite_data[mid] = {}
-            invite_data[mid]["invited_by"] = iid
-            if iid not in invite_data:
-                invite_data[iid] = {"total": 0, "real": 0, "left": 0}
-            invite_data[iid]["total"] = invite_data[iid].get("total", 0) + 1
-            invite_data[iid]["real"]  = invite_data[iid].get("total", 0) - invite_data[iid].get("left", 0)
-            save_invite_data(invite_data)
-            il = bot.get_channel(INVITE_LOG_CHANNEL_ID)
-            if il:
-                e = discord.Embed(title="📨 New Invite",
-                                  description=f"{member.mention} joined via {inviter.mention}'s invite",
-                                  color=discord.Color.green(), timestamp=discord.utils.utcnow())
-                e.set_thumbnail(url=member.display_avatar.url)
-                e.add_field(
-                    name="📊 Inviter Stats",
-                    value=(f"**Name:** {inviter.display_name}\n"
-                           f"**Total:** {invite_data[iid].get('total', 0)}\n"
-                           f"**Real:** {invite_data[iid].get('real', 0)}\n"
-                           f"**Left:** {invite_data[iid].get('left', 0)}"),
-                    inline=False
-                )
-                e.set_footer(text=f"{SERVER_NAME} • Invite Log | User ID: {member.id}")
-                await il.send(embed=e)
-    except Exception as ex:
-        print(f"Invite error: {ex}")
-
-    # Join log
-    log = bot.get_channel(MEMBER_JOIN_LOG_CHANNEL_ID)
-    if log:
-        e = discord.Embed(title="🟢 Member Joined", color=discord.Color.green(),
-                          timestamp=discord.utils.utcnow())
-        e.set_thumbnail(url=member.display_avatar.url)
-        e.add_field(name="👤 User",         value=f"{member.mention} (`{member.id}`)", inline=True)
-        e.add_field(name="📛 Username",     value=str(member),                        inline=True)
-        e.add_field(name="📅 Account Age",  value=f"<t:{int(member.created_at.timestamp())}:R>", inline=True)
-        e.add_field(name="👥 Members now",  value=str(guild.member_count),            inline=True)
-        e.set_footer(text=f"{SERVER_NAME} • Member Log | User ID: {member.id}")
-        await log.send(embed=e)
-
-    await update_voice_channels(guild)
-
-# ══════════════════════════════════════════════════════════════
-#  COMMANDS
-# ══════════════════════════════════════════════════════════════
-
-# ── MODERATION ────────────────────────────────────────────────
-@bot.command()
-async def ban(ctx, member: discord.Member = None, *, reason="No reason provided"):
-    if not has_mod_permissions(ctx.author):
-        return await ctx.reply("❌ You don't have permission to use this command.")
-    if not member:
-        return await ctx.reply("Usage: `!ban @user [reason]`")
-    await member.ban(reason=reason)
-    await ctx.reply(f"🔨 **{member}** has been banned.\n📌 Reason: {reason}")
-    log = bot.get_channel(BOT_LOG_ID)
-    if log:
-        await log.send(f"🔨 **{ctx.author}** banned **{member}** — {reason}")
-
-
-@bot.command()
-async def kick(ctx, member: discord.Member = None, *, reason="No reason provided"):
-    if not has_mod_permissions(ctx.author):
-        return await ctx.reply("❌ You don't have permission to use this command.")
-    if not member:
-        return await ctx.reply("Usage: `!kick @user [reason]`")
-    await member.kick(reason=reason)
-    await ctx.reply(f"👢 **{member}** has been kicked.\n📌 Reason: {reason}")
-    log = bot.get_channel(BOT_LOG_ID)
-    if log:
-        await log.send(f"👢 **{ctx.author}** kicked **{member}** — {reason}")
-
-
-@bot.command()
-async def timeout(ctx, member: discord.Member = None, minutes: int = None, *, reason="No reason provided"):
-    if not has_mod_permissions(ctx.author):
-        return await ctx.reply("❌ You don't have permission to use this command.")
-    if not member or not minutes:
-        return await ctx.reply("Usage: `!timeout @user <minutes> [reason]`")
-    await member.timeout(datetime.timedelta(minutes=minutes), reason=reason)
-    await ctx.reply(f"⏳ **{member}** has been timed out for **{minutes} minute(s)**.\n📌 Reason: {reason}")
-    log = bot.get_channel(BOT_LOG_ID)
-    if log:
-        await log.send(f"⏳ **{ctx.author}** timed out **{member}** for {minutes}min — {reason}")
-
-
-@bot.command()
-async def clearmessage(ctx, amount: int = None):
-    if not has_mod_permissions(ctx.author):
-        return await ctx.reply("❌ You don't have permission to use this command.")
-    if not amount:
-        return await ctx.reply("Usage: `!clearmessage <amount>`")
-    await ctx.channel.purge(limit=amount + 1)
-    await ctx.send(f"🧹 Deleted **{amount}** message(s).", delete_after=3)
-
-
-# ── INFO ──────────────────────────────────────────────────────
-@bot.command()
-async def serverstatus(ctx):
-    if not is_staff_or_above(ctx.author):
-        return await ctx.reply("❌ You don't have permission to use this command.")
-    g = ctx.guild
-    e = discord.Embed(title="📊 Server Status", color=discord.Color.blurple(),
-                      timestamp=discord.utils.utcnow())
-    e.set_thumbnail(url=g.icon.url if g.icon else None)
-    e.add_field(name="👤 Members", value=sum(1 for m in g.members if not m.bot))
-    e.add_field(name="🤖 Bots",    value=sum(1 for m in g.members if m.bot))
-    e.add_field(name="🟢 Online",  value=sum(1 for m in g.members if m.status != discord.Status.offline))
-    e.add_field(name="🚀 Boosts",  value=g.premium_subscription_count)
-    e.set_footer(text=f"{SERVER_NAME} • Server Status")
-    await ctx.reply(embed=e)
-
-
-@bot.command()
-async def invites(ctx, member: discord.Member = None):
-    if not is_staff_or_above(ctx.author):
-        return await ctx.reply("❌ You don't have permission to use this command.")
-    t   = member or ctx.author
-    uid = str(t.id)
-    d   = invite_data.get(uid, {"total": 0, "real": 0, "left": 0})
-    e = discord.Embed(title=f"📨 Invites — {t.display_name}", color=discord.Color.blurple(),
-                      timestamp=discord.utils.utcnow())
-    e.set_thumbnail(url=t.display_avatar.url)
-    e.add_field(name="📊 Total", value=str(d.get("total", 0)), inline=True)
-    e.add_field(name="✅ Real",  value=str(d.get("real", 0)),  inline=True)
-    e.add_field(name="🚪 Left", value=str(d.get("left", 0)),  inline=True)
-    e.set_footer(text=f"{SERVER_NAME} • Invite Log")
-    await ctx.reply(embed=e)
-
-
-@bot.command()
-async def serverinvites(ctx):
-    if not is_staff_or_above(ctx.author):
-        return await ctx.reply("❌ You don't have permission to use this command.")
-    guild   = ctx.guild
-    entries = []
-    for uid, d in invite_data.items():
-        if not isinstance(d, dict):
-            continue
-        total = d.get("total", 0)
-        if total <= 0:
-            continue
-        member = guild.get_member(int(uid))
-        name   = member.display_name if member else f"User {uid}"
-        entries.append((name, total, d.get("real", 0), d.get("left", 0)))
-    entries.sort(key=lambda x: x[1], reverse=True)
-
-    e = discord.Embed(title=f"📨 Server Invites — {guild.name}", color=discord.Color.blurple(),
-                      timestamp=discord.utils.utcnow())
-    if guild.icon:
-        e.set_thumbnail(url=guild.icon.url)
-    e.set_image(url=BANNER_SUPPORT)
-
-    if entries:
-        medals = ["🥇", "🥈", "🥉"]
-        desc   = ""
-        for i, (name, total, real, left) in enumerate(entries[:20]):
-            medal  = medals[i] if i < 3 else f"**#{i+1}**"
-            desc  += f"{medal} **{name}** — `{total}` total | `{real}` real | `{left}` left\n"
-        e.description = desc
-    else:
-        e.description = "No invite data available yet."
-    e.set_footer(text=f"{SERVER_NAME} • {guild.member_count} total members")
-    await ctx.send(embed=e)
-
-
-@bot.command()
-async def scan(ctx, member: discord.Member = None):
-    if not is_staff_or_above(ctx.author):
-        return await ctx.reply("❌ You don't have permission to use this command.")
-    await ctx.reply("🔍 Scanning...", delete_after=2)
-    guild = ctx.guild
-
-    if member:
-        age = (datetime.datetime.utcnow() - member.created_at.replace(tzinfo=None)).days
-        al  = []
-        alb = {
-            discord.AuditLogAction.ban:                "🔨 Ban",
-            discord.AuditLogAction.kick:               "👢 Kick",
-            discord.AuditLogAction.member_role_update: "🎭 Role Update",
-            discord.AuditLogAction.channel_delete:     "🗑️ Channel Delete",
-            discord.AuditLogAction.role_delete:        "🗑️ Role Delete",
+            .setFooter({ text: `${SERVER_NAME} • Ticket Log` })
+            .setTimestamp();
+          await lc.send({ embeds: [e] });
         }
-        try:
-            async for entry in guild.audit_logs(limit=50):
-                if entry.user.id == member.id and entry.action in alb:
-                    al.append(
-                        f"{alb[entry.action]} → `{getattr(entry.target, 'name', str(entry.target))}` "
-                        f"<t:{int(entry.created_at.timestamp())}:R>"
-                    )
-                    if len(al) >= 8:
-                        break
-        except:
-            pass
+        await interaction.reply({ content: "🔒 Closing in 4 seconds..." });
+        setTimeout(() => interaction.channel.delete().catch(() => {}), 4000);
+        return;
+      }
 
-        e = discord.Embed(
-            title=f"🔍 Scan — {member.display_name}",
-            color=discord.Color.dark_red() if (age < ALT_ACCOUNT_AGE_DAYS or member.guild_permissions.administrator)
-                  else discord.Color.blurple(),
-            timestamp=discord.utils.utcnow()
-        )
-        e.set_thumbnail(url=member.display_avatar.url)
-        e.add_field(name="👤 User",    value=f"{member} (`{member.id}`)", inline=True)
-        e.add_field(name="📅 Age",     value=f"{age} days {'⚠️ Possible ALT' if age < ALT_ACCOUNT_AGE_DAYS else '✅'}", inline=True)
-        e.add_field(name="📆 Created", value=f"<t:{int(member.created_at.timestamp())}:F>", inline=True)
-        e.add_field(
-            name="🔑 Permissions",
-            value=(f"Administrator: {'✅' if member.guild_permissions.administrator else '❌'}\n"
-                   f"Ban: {'✅' if member.guild_permissions.ban_members else '❌'}\n"
-                   f"Kick: {'✅' if member.guild_permissions.kick_members else '❌'}\n"
-                   f"Manage Guild: {'✅' if member.guild_permissions.manage_guild else '❌'}"),
-            inline=True
-        )
-        e.add_field(name="🎭 Roles",
-                    value=", ".join(r.mention for r in member.roles[1:]) or "None",
-                    inline=False)
-        e.add_field(name=f"📋 Recent Actions ({len(al)})",
-                    value="\n".join(al) if al else "None found",
-                    inline=False)
-        e.set_footer(text=f"{SERVER_NAME} • Scan")
-        await ctx.send(embed=e)
-        return
+      // Duty: On Duty
+      if (interaction.customId === "duty_on") {
+        const member = interaction.member;
+        const dr = interaction.guild.roles.cache.get(DUTY_ROLE_ID);
+        if (dr && member.roles.cache.has(DUTY_ROLE_ID))
+          return interaction.reply({ content: "⚠️ You are already On Duty!", ephemeral: true });
+        if (dr) await member.roles.add(dr).catch(() => {});
+        const uid = interaction.user.id;
+        if (!dutyData[uid] || typeof dutyData[uid] !== "object") dutyData[uid] = { total_seconds: 0 };
+        dutyData[uid].start_time = Date.now() / 1000;
+        saveJSON(DUTY_FILE, dutyData);
+        const log = interaction.guild.channels.cache.get(DUTY_LOG_CHANNEL_ID);
+        if (log) {
+          const e = new EmbedBuilder()
+            .setTitle("🟢 On Duty").setColor(0x00ff00)
+            .setThumbnail(interaction.user.displayAvatarURL())
+            .setDescription(`${interaction.user} is now **On Duty**.`)
+            .setFooter({ text: `${SERVER_NAME} • Duty Log | User ID: ${interaction.user.id}` })
+            .setTimestamp();
+          await log.send({ embeds: [e] });
+        }
+        return interaction.reply({ content: "✅ You are now **On Duty**!", ephemeral: true });
+      }
 
-    admins = []; newa = []; bl = []; sus = []
-    for m in guild.members:
-        age = (datetime.datetime.utcnow() - m.created_at.replace(tzinfo=None)).days
-        if m.bot:
-            iv = bool(m.public_flags and discord.PublicUserFlags.verified_bot in m.public_flags)
-            bl.append(f"{'✅' if iv else '⚠️'} {m.mention} (`{m.id}`)")
-        if not m.bot and m.guild_permissions.administrator:
-            admins.append(f"{m.mention} (`{m.id}`)")
-        if not m.bot and age < ALT_ACCOUNT_AGE_DAYS:
-            newa.append(f"{m.mention} — {age} days")
-        if not m.bot and m.guild_permissions.administrator and age < ALT_ACCOUNT_AGE_DAYS:
-            sus.append(f"🚨 {m.mention} — Admin + {age} days")
-
-    e = discord.Embed(title=f"🔍 Server Scan — {guild.name}",
-                      color=discord.Color.dark_orange(), timestamp=discord.utils.utcnow())
-    e.add_field(name=f"👑 Administrators ({len(admins)})",                      value="\n".join(admins[:10]) or "None", inline=False)
-    e.add_field(name=f"🤖 Bots ({len(bl)}) ✅/⚠️",                            value="\n".join(bl[:10])     or "None", inline=False)
-    e.add_field(name=f"⚠️ New accounts < {ALT_ACCOUNT_AGE_DAYS}d ({len(newa)})", value="\n".join(newa[:10])   or "None", inline=False)
-    e.add_field(name=f"🚨 Suspicious ({len(sus)})",                             value="\n".join(sus[:10])    or "✅ None", inline=False)
-    e.set_footer(text=f"{SERVER_NAME} • Scan | {guild.member_count} members")
-    await ctx.send(embed=e)
-
-
-# ── OWNER / CO-OWNER / CEO ────────────────────────────────────
-@bot.command()
-async def say(ctx, *, message: str):
-    if not is_owner_or_above(ctx.author):
-        return await ctx.reply("❌ Owner / Co-Owner / CEO only.")
-    await ctx.send(message)
-    try:
-        await ctx.message.delete()
-    except:
-        pass
-
-
-@bot.command()
-async def say2(ctx, *, message: str):
-    """Embed message with server thumbnail."""
-    if not is_owner_or_above(ctx.author):
-        return await ctx.reply("❌ Owner / Co-Owner / CEO only.")
-    guild = ctx.guild
-    e = discord.Embed(description=message, color=discord.Color.from_rgb(20, 20, 40),
-                      timestamp=discord.utils.utcnow())
-    if guild.icon:
-        e.set_thumbnail(url=guild.icon.url)
-    e.set_footer(text=guild.name, icon_url=guild.icon.url if guild.icon else None)
-    await ctx.send(embed=e)
-    try:
-        await ctx.message.delete()
-    except:
-        pass
-
-
-# ── CEO ONLY ──────────────────────────────────────────────────
-@bot.command()
-async def dmall(ctx, *, message: str):
-    """DM all members with an embed."""
-    if not is_ceo(ctx.author):
-        return await ctx.reply("❌ CEO only.")
-    guild   = ctx.guild
-    now_str = discord.utils.utcnow().strftime("%d/%m/%Y %H:%M UTC")
-    sent    = 0
-    failed  = 0
-    for m in guild.members:
-        if m.bot:
-            continue
-        try:
-            e = discord.Embed(description=message, color=discord.Color.from_rgb(20, 20, 40),
-                              timestamp=discord.utils.utcnow())
-            if guild.icon:
-                e.set_thumbnail(url=guild.icon.url)
-            e.set_footer(
-                text=f"Sent by: {ctx.author.display_name} • {now_str}",
-                icon_url=ctx.author.display_avatar.url
+      // Duty: Off Duty
+      if (interaction.customId === "duty_off") {
+        const member = interaction.member;
+        const dr = interaction.guild.roles.cache.get(DUTY_ROLE_ID);
+        if (!member.roles.cache.has(DUTY_ROLE_ID))
+          return interaction.reply({ content: "⚠️ You are not On Duty!", ephemeral: true });
+        if (dr) await member.roles.remove(dr).catch(() => {});
+        const uid = interaction.user.id;
+        let sessionSecs = 0;
+        if (dutyData[uid]?.start_time) {
+          sessionSecs = Date.now() / 1000 - dutyData[uid].start_time;
+          dutyData[uid].total_seconds = (dutyData[uid].total_seconds || 0) + sessionSecs;
+          delete dutyData[uid].start_time;
+          saveJSON(DUTY_FILE, dutyData);
+        }
+        const ds    = formatDuration(sessionSecs);
+        const total = dutyData[uid]?.total_seconds || 0;
+        const th    = Math.floor(total / 3600);
+        const tm    = Math.floor((total % 3600) / 60);
+        const log   = interaction.guild.channels.cache.get(DUTY_LOG_CHANNEL_ID);
+        if (log) {
+          const e = new EmbedBuilder()
+            .setTitle("🔴 Off Duty").setColor(0xff0000)
+            .setThumbnail(interaction.user.displayAvatarURL())
+            .setDescription(`${interaction.user} went **Off Duty**.`)
+            .addFields(
+              { name: "⏱ Session", value: ds,              inline: true },
+              { name: "📊 Total",  value: `${th}h ${tm}m`, inline: true },
             )
-            await m.send(embed=e)
-            sent += 1
-        except:
-            failed += 1
-            continue
-    await ctx.reply(f"📨 Delivered to **{sent}** member(s). ❌ Failed: **{failed}**.")
+            .setFooter({ text: `${SERVER_NAME} • Duty Log | User ID: ${interaction.user.id}` })
+            .setTimestamp();
+          await log.send({ embeds: [e] });
+        }
+        return interaction.reply({ content: `✅ **Off Duty!** Session: **${ds}** | Total: **${th}h ${tm}m**`, ephemeral: true });
+      }
 
+      // Duty: Status
+      if (interaction.customId === "duty_status") {
+        const guild = interaction.guild;
+        const dr    = guild.roles.cache.get(DUTY_ROLE_ID);
+        const now   = Date.now() / 1000;
+        const onDutyMembers = [];
+        if (dr) {
+          for (const [, m] of guild.members.cache) {
+            if (m.roles.cache.has(DUTY_ROLE_ID) && !m.user.bot) {
+              const uid = m.user.id;
+              if (dutyData[uid]?.start_time) {
+                const elapsed = now - dutyData[uid].start_time;
+                onDutyMembers.push(`🟢 ${m} — \`${formatDuration(elapsed)}\``);
+              } else {
+                onDutyMembers.push(`🟢 ${m} — \`0h 0m 0s\``);
+              }
+            }
+          }
+        }
+        const e = new EmbedBuilder()
+          .setTitle("📋 Duty Status").setColor(0x5865f2)
+          .setDescription(onDutyMembers.length ? onDutyMembers.join("\n") : "❌ Nobody is On Duty right now.")
+          .setFooter({ text: `${onDutyMembers.length} member(s) on duty | ${SERVER_NAME}` })
+          .setTimestamp();
+        return interaction.reply({ embeds: [e], ephemeral: true });
+      }
 
-@bot.command()
-async def setaltdays(ctx, days: int = None):
-    if not is_ceo(ctx.author):
-        return await ctx.reply("❌ CEO only.")
-    global ALT_ACCOUNT_AGE_DAYS
-    if not days or days < 1:
-        return await ctx.reply(f"Current threshold: **{ALT_ACCOUNT_AGE_DAYS} days**\nUsage: `!setaltdays <days>`")
-    ALT_ACCOUNT_AGE_DAYS = days
-    await ctx.reply(f"✅ New alt threshold: **{days} days**")
+      // Duty: Leaderboard
+      if (interaction.customId === "duty_leaderboard_btn") {
+        const guild = interaction.guild;
+        const now   = Date.now() / 1000;
+        const dr    = guild.roles.cache.get(DUTY_ROLE_ID);
+        const totals = Object.entries(dutyData)
+          .filter(([, d]) => typeof d === "object")
+          .map(([uid, d]) => [uid, getTotalSeconds(uid, now)])
+          .filter(([, s]) => s > 0)
+          .sort((a, b) => b[1] - a[1]);
+        const medals = ["🥇", "🥈", "🥉"];
+        let desc = "";
+        for (let i = 0; i < Math.min(10, totals.length); i++) {
+          const [uid, secs] = totals[i];
+          const member = guild.members.cache.get(uid);
+          const name   = member ? member.displayName : `User ${uid}`;
+          const hh     = Math.floor(secs / 3600);
+          const mn     = Math.floor((secs % 3600) / 60);
+          const medal  = i < 3 ? medals[i] : `**#${i + 1}**`;
+          const isOn   = member && dr && member.roles.cache.has(DUTY_ROLE_ID) ? " 🟢" : "";
+          desc += `${medal} ${name}${isOn} — \`${hh}h ${mn}m\`\n`;
+        }
+        const e = new EmbedBuilder()
+          .setTitle("🏆 Duty Leaderboard").setColor(0xffd700)
+          .setDescription(desc || "No duty data yet.")
+          .setFooter({ text: `🟢 = Currently on duty • Times never reset | ${SERVER_NAME}` })
+          .setTimestamp();
+        return interaction.reply({ embeds: [e], ephemeral: true });
+      }
 
+      // Suggestion button
+      if (interaction.customId === "make_suggestion_btn") {
+        const modal = new ModalBuilder()
+          .setCustomId("suggestion_modal")
+          .setTitle("💡 Make a Suggestion")
+          .addComponents(
+            new ActionRowBuilder().addComponents(
+              new TextInputBuilder()
+                .setCustomId("suggestion_input")
+                .setLabel("Your suggestion")
+                .setStyle(TextInputStyle.Paragraph)
+                .setPlaceholder("Write your suggestion here...")
+                .setRequired(true)
+                .setMaxLength(1000)
+            )
+          );
+        return interaction.showModal(modal);
+      }
 
-@bot.command()
-async def togglealtban(ctx):
-    if not is_ceo(ctx.author):
-        return await ctx.reply("❌ CEO only.")
-    global ALT_AUTO_KICK
-    ALT_AUTO_KICK = not ALT_AUTO_KICK
-    await ctx.reply(f"Alt auto-kick: {'✅ **Enabled**' if ALT_AUTO_KICK else '❌ **Disabled**'}")
+      // Review button
+      if (interaction.customId === "make_review_btn") {
+        const ratingRow = new ActionRowBuilder().addComponents(
+          new StringSelectMenuBuilder()
+            .setCustomId("star_select_review")
+            .setPlaceholder("⭐ Select your rating...")
+            .addOptions([
+              { label: "⭐ 1 Star",          emoji: "⭐", value: "1" },
+              { label: "⭐⭐ 2 Stars",        emoji: "⭐", value: "2" },
+              { label: "⭐⭐⭐ 3 Stars",      emoji: "⭐", value: "3" },
+              { label: "⭐⭐⭐⭐ 4 Stars",    emoji: "⭐", value: "4" },
+              { label: "⭐⭐⭐⭐⭐ 5 Stars",  emoji: "⭐", value: "5" },
+            ])
+        );
+        const e = new EmbedBuilder()
+          .setTitle("⭐ Select Your Rating")
+          .setDescription("Choose your star rating, then write your review!")
+          .setColor(0xffd700);
+        return interaction.reply({ embeds: [e], components: [ratingRow], ephemeral: true });
+      }
 
+      // Bot verification: Accept
+      if (interaction.customId.startsWith("bot_accept_")) {
+        if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator))
+          return interaction.reply({ content: "❌ Admins only.", ephemeral: true });
+        const botId = interaction.customId.replace("bot_accept_", "");
+        delete pendingBots[botId];
+        const botMember = interaction.guild.members.cache.get(botId);
+        if (botMember) {
+          for (const [, ch] of interaction.guild.channels.cache) {
+            await ch.permissionOverwrites.delete(botMember, "Bot accepted").catch(() => {});
+          }
+        }
+        const e = new EmbedBuilder()
+          .setTitle("✅ Bot Accepted")
+          .setDescription(`**${botMember?.user?.tag ?? botId}** was accepted by ${interaction.user}.`)
+          .setColor(0x00ff00).setTimestamp();
+        await interaction.message.edit({ embeds: [e], components: [] });
+        return interaction.reply({ content: "✅ Bot accepted!", ephemeral: true });
+      }
 
-@bot.command()
-async def dutypanel(ctx):
-    if not is_ceo(ctx.author):
-        return await ctx.reply("❌ CEO only.")
-    e = discord.Embed(
-        title="🟢 Staff Duty Panel",
-        description=("Press **On Duty** when your shift starts and **Off Duty** when it ends.\n\n"
-                     "📋 **Duty Status** — See who is on duty right now\n"
-                     "🏆 **Leaderboard** — All-time duty hours"),
-        color=discord.Color.green()
+      // Bot verification: Deny
+      if (interaction.customId.startsWith("bot_deny_")) {
+        if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator))
+          return interaction.reply({ content: "❌ Admins only.", ephemeral: true });
+        const botId     = interaction.customId.replace("bot_deny_", "");
+        const botMember = interaction.guild.members.cache.get(botId);
+        let kicked = false;
+        if (botMember) {
+          await botMember.kick(`Bot denied by ${interaction.user.tag}`).then(() => kicked = true).catch(() => {});
+        }
+        delete pendingBots[botId];
+        const e = new EmbedBuilder()
+          .setTitle("❌ Bot Denied & Kicked")
+          .setDescription(`**${botMember?.user?.tag ?? botId}** kicked by ${interaction.user}.\nKick: ${kicked ? "✅" : "❌"}`)
+          .setColor(0xff0000).setTimestamp();
+        await interaction.message.edit({ embeds: [e], components: [] });
+        return interaction.reply({ content: "❌ Bot denied and kicked.", ephemeral: true });
+      }
+    }
+
+    // ── SELECT MENUS ──────────────────────────────────────────
+    if (interaction.isStringSelectMenu()) {
+      // Support Ticket
+      if (interaction.customId === "support_ticket_select") {
+        const v = interaction.values[0];
+        const author = interaction.user;
+        const configs = {
+          admin: {
+            name:    `admin-${author.username}`.toLowerCase().replace(/ /g, "-"),
+            title:   "👑 Talk to Administrator",
+            roleIds: [CEO_ROLE_ID, OWNER_ROLE_ID, CO_OWNER_ROLE_ID],
+            desc:    `Hello ${author}!\n\nA member of the **Administration** will be with you shortly.\nPlease describe your matter below.\n\n*One active ticket at a time.*`,
+            color:   0xffd700,
+          },
+          support: {
+            name:    `support-${author.username}`.toLowerCase().replace(/ /g, "-"),
+            title:   "💬 Support Ticket",
+            roleIds: [STAFF_ROLE_ID, MANAGER_ROLE_ID, OWNER_ROLE_ID, CO_OWNER_ROLE_ID],
+            desc:    `Hello ${author}!\n\nOur **Support Team** will assist you shortly.\nPlease describe your issue below.\n\n*One active ticket at a time.*`,
+            color:   0x5865f2,
+          },
+          report: {
+            name:    `report-${author.username}`.toLowerCase().replace(/ /g, "-"),
+            title:   "📋 Report Ticket",
+            roleIds: [OWNER_ROLE_ID, CEO_ROLE_ID],
+            desc:    `Hello ${author}!\n\nPlease provide full details of the **report** below.\nInclude usernames, timestamps and any evidence.\n\n*One active ticket at a time.*`,
+            color:   0xff0000,
+          },
+          purchase: {
+            name:    `purchase-${author.username}`.toLowerCase().replace(/ /g, "-"),
+            title:   "🛒 Help with a Purchase",
+            roleIds: [CEO_ROLE_ID],
+            desc:    `Hello ${author}!\n\nA **CEO** team member will help you with your purchase shortly.\nPlease provide your order details below.\n\n*One active ticket at a time.*`,
+            color:   0x00ff00,
+          },
+          other: {
+            name:    `other-${author.username}`.toLowerCase().replace(/ /g, "-"),
+            title:   "📌 Other Ticket",
+            roleIds: [STAFF_ROLE_ID, MANAGER_ROLE_ID, OWNER_ROLE_ID, CEO_ROLE_ID, CO_OWNER_ROLE_ID],
+            desc:    `Hello ${author}!\n\nOur team will be with you shortly.\nPlease explain your request below.\n\n*One active ticket at a time.*`,
+            color:   0x141428,
+          },
+        };
+        const cfg = configs[v];
+        return createTicketChannel(interaction, {
+          categoryId: SUPPORT_CATEGORY_ID,
+          banner:     BANNER_SUPPORT,
+          footer:     `${SERVER_NAME} • Support System`,
+          ...cfg,
+        });
+      }
+
+      // Buy Ticket
+      if (interaction.customId === "buy_ticket_select") {
+        const v      = interaction.values[0];
+        const author = interaction.user;
+        const configs = {
+          buy_product: {
+            name:    `buy-${author.username}`.toLowerCase().replace(/ /g, "-"),
+            title:   "🛍️ Buy a Product",
+            roleIds: [CEO_ROLE_ID, DONATE_MANAGER_ROLE_ID],
+            desc:    `Hello ${author}!\n\nThank you for your interest in purchasing a product!\nPlease let us know **what you'd like to buy** and a team member will assist you.\n\n*One active ticket at a time.*`,
+            color:   0x00ff00,
+          },
+          make_order: {
+            name:    `order-${author.username}`.toLowerCase().replace(/ /g, "-"),
+            title:   "📦 Make an Order",
+            roleIds: [CEO_ROLE_ID, CREATOR_ROLE_ID, OWNER_ROLE_ID, CO_OWNER_ROLE_ID],
+            desc:    `Hello ${author}!\n\nPlease describe your **custom order** in as much detail as possible.\nOur team will review it and get back to you shortly.\n\n*One active ticket at a time.*`,
+            color:   0xffa500,
+          },
+        };
+        const cfg = configs[v];
+        return createTicketChannel(interaction, {
+          categoryId: BUY_PANEL_CATEGORY_ID,
+          banner:     BANNER_BUY,
+          footer:     `${SERVER_NAME} • Buy Panel`,
+          ...cfg,
+        });
+      }
+
+      // Services Ticket
+      if (interaction.customId === "services_ticket_select") {
+        const author = interaction.user;
+        return createTicketChannel(interaction, {
+          categoryId: SERVICES_CATEGORY_ID,
+          name:       `service-${author.username}`.toLowerCase().replace(/ /g, "-"),
+          title:      "⚙️ Buy a Service",
+          roleIds:    [CEO_ROLE_ID],
+          desc:       `Hello ${author}!\n\nThank you for your interest in one of our **services**!\nPlease describe the service you'd like and our CEO team will be in touch shortly.\n\n*One active ticket at a time.*`,
+          color:      0x5865f2,
+          banner:     BANNER_SERVICES,
+          footer:     `${SERVER_NAME} • Services`,
+        });
+      }
+
+      // Star rating for review
+      if (interaction.customId === "star_select_review") {
+        const stars = parseInt(interaction.values[0]);
+        const modal = new ModalBuilder()
+          .setCustomId(`review_modal_${stars}`)
+          .setTitle("⭐ Write a Review")
+          .addComponents(
+            new ActionRowBuilder().addComponents(
+              new TextInputBuilder()
+                .setCustomId("review_input")
+                .setLabel("Your review")
+                .setStyle(TextInputStyle.Paragraph)
+                .setPlaceholder("Share your experience...")
+                .setRequired(true)
+                .setMaxLength(1000)
+            )
+          );
+        return interaction.showModal(modal);
+      }
+    }
+
+    // ── MODALS ────────────────────────────────────────────────
+    if (interaction.isModalSubmit()) {
+      // Suggestion
+      if (interaction.customId === "suggestion_modal") {
+        const text = interaction.fields.getTextInputValue("suggestion_input");
+        const ch   = interaction.guild.channels.cache.get(SUGGESTION_CHANNEL_ID);
+        if (!ch) return interaction.reply({ content: "❌ Channel not found.", ephemeral: true });
+        const e = new EmbedBuilder()
+          .setTitle("💡 New Suggestion")
+          .setDescription(text)
+          .setColor(0x5865f2)
+          .setAuthor({ name: interaction.user.displayName, iconURL: interaction.user.displayAvatarURL() })
+          .setThumbnail(SERVER_THUMBNAIL_URL)
+          .setFooter({ text: `User ID: ${interaction.user.id} • ${SERVER_NAME}` })
+          .setTimestamp();
+        const msg = await ch.send({ embeds: [e] });
+        await msg.react("👍");
+        await msg.react("👎");
+        return interaction.reply({ content: "✅ Suggestion submitted!", ephemeral: true });
+      }
+
+      // Review
+      if (interaction.customId.startsWith("review_modal_")) {
+        const stars = parseInt(interaction.customId.replace("review_modal_", ""));
+        const text  = interaction.fields.getTextInputValue("review_input");
+        const ch    = interaction.guild.channels.cache.get(REVIEW_CHANNEL_ID);
+        if (!ch) return interaction.reply({ content: "❌ Channel not found.", ephemeral: true });
+        const sd = "⭐".repeat(stars) + "☆".repeat(5 - stars);
+        const colorMap = { 1: 0xff0000, 2: 0xff8800, 3: 0xffff00, 4: 0x00ff00, 5: 0xffd700 };
+        const e = new EmbedBuilder()
+          .setTitle("⭐ New Review")
+          .setColor(colorMap[stars] || 0x5865f2)
+          .addFields(
+            { name: "Rating",  value: sd,   inline: false },
+            { name: "Comment", value: text, inline: false },
+          )
+          .setAuthor({ name: interaction.user.displayName, iconURL: interaction.user.displayAvatarURL() })
+          .setThumbnail(SERVER_THUMBNAIL_URL)
+          .setFooter({ text: `User ID: ${interaction.user.id} • ${SERVER_NAME}` })
+          .setTimestamp();
+        await ch.send({ embeds: [e] });
+        return interaction.reply({ content: `✅ Review submitted! (${sd})`, ephemeral: true });
+      }
+    }
+  } catch (err) {
+    console.error("Interaction error:", err);
+    try {
+      if (!interaction.replied && !interaction.deferred)
+        await interaction.reply({ content: "❌ An error occurred.", ephemeral: true });
+    } catch {}
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
+//  VOICE STATE UPDATE
+// ══════════════════════════════════════════════════════════════
+client.on("voiceStateUpdate", async (before, after) => {
+  const member = after.member || before.member;
+  const guild  = member.guild;
+  const log    = guild.channels.cache.get(VOICE_LOG_CHANNEL_ID);
+
+  // Temp voice creation
+  if (after.channelId === TEMP_VOICE_CHANNEL_ID) {
+    const cat = guild.channels.cache.get(TEMP_VOICE_CATEGORY_ID);
+    const tc  = await guild.channels.create({
+      name:   `${member.user.username}'s Channel`,
+      type:   2, // GUILD_VOICE
+      parent: cat?.id,
+    }).catch(() => null);
+    if (tc) {
+      await member.voice.setChannel(tc).catch(() => {});
+      if (log) {
+        const e = new EmbedBuilder()
+          .setTitle("📞 Support Channel Created").setColor(0x0000ff)
+          .setThumbnail(member.user.displayAvatarURL())
+          .addFields(
+            { name: "👤 User",    value: `${member} (\`${member.id}\`)`, inline: true },
+            { name: "📁 Channel", value: `**${tc.name}**`,               inline: true },
+          )
+          .setFooter({ text: `${SERVER_NAME} • Voice Log | Channel ID: ${tc.id}` })
+          .setTimestamp();
+        await log.send({ embeds: [e] });
+      }
+    }
+  }
+
+  // Temp voice deletion
+  if (before.channel &&
+      before.channel.parentId === TEMP_VOICE_CATEGORY_ID &&
+      before.channelId !== TEMP_VOICE_CHANNEL_ID &&
+      before.channel.members.size === 0) {
+    const nc = before.channel.name;
+    await before.channel.delete().catch(() => {});
+    if (log) {
+      const e = new EmbedBuilder()
+        .setTitle("🗑️ Support Channel Deleted").setColor(0xff0000)
+        .addFields(
+          { name: "📁 Channel", value: `**${nc}**`,     inline: true },
+          { name: "📌 Reason",  value: "Empty channel", inline: true },
+        )
+        .setFooter({ text: `${SERVER_NAME} • Voice Log` })
+        .setTimestamp();
+      await log.send({ embeds: [e] });
+    }
+  }
+
+  if (!log) return;
+
+  if (!before.channel && after.channel) {
+    const e = new EmbedBuilder()
+      .setTitle("🔊 Voice Join").setColor(0x00ff00)
+      .setThumbnail(member.user.displayAvatarURL())
+      .addFields(
+        { name: "👤 User",    value: `${member} (\`${member.id}\`)`, inline: true },
+        { name: "🔊 Channel", value: `**${after.channel.name}**`,    inline: true },
+      )
+      .setFooter({ text: `${SERVER_NAME} • Voice Log | User ID: ${member.id}` })
+      .setTimestamp();
+    await log.send({ embeds: [e] });
+  } else if (before.channel && !after.channel) {
+    const e = new EmbedBuilder()
+      .setTitle("🔇 Voice Leave").setColor(0xff0000)
+      .setThumbnail(member.user.displayAvatarURL())
+      .addFields(
+        { name: "👤 User",    value: `${member} (\`${member.id}\`)`, inline: true },
+        { name: "🔇 Channel", value: `**${before.channel.name}**`,   inline: true },
+      )
+      .setFooter({ text: `${SERVER_NAME} • Voice Log | User ID: ${member.id}` })
+      .setTimestamp();
+    await log.send({ embeds: [e] });
+  } else if (before.channelId !== after.channelId) {
+    const e = new EmbedBuilder()
+      .setTitle("🔀 Voice Move").setColor(0xffff00)
+      .setThumbnail(member.user.displayAvatarURL())
+      .addFields(
+        { name: "👤 User", value: `${member} (\`${member.id}\`)`, inline: false },
+        { name: "📤 From", value: `**${before.channel.name}**`,   inline: true  },
+        { name: "📥 To",   value: `**${after.channel.name}**`,    inline: true  },
+      )
+      .setFooter({ text: `${SERVER_NAME} • Voice Log | User ID: ${member.id}` })
+      .setTimestamp();
+    await log.send({ embeds: [e] });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
+//  GUILD EVENTS (channels, roles)
+// ══════════════════════════════════════════════════════════════
+client.on("channelCreate", async channel => {
+  const log = channel.guild?.channels.cache.get(CHANNEL_CREATE_LOG_CHANNEL_ID);
+  if (!log) return;
+  let moderator = "Unknown";
+  const logs = await channel.guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.ChannelCreate }).catch(() => null);
+  if (logs) moderator = logs.entries.first()?.executor?.toString() ?? "Unknown";
+  const e = new EmbedBuilder()
+    .setTitle("📁 Channel Created").setColor(0x00ff00)
+    .addFields(
+      { name: "📛 Name",       value: `**${channel.name}**`,                 inline: true },
+      { name: "📂 Type",       value: String(channel.type),                  inline: true },
+      { name: "👤 By",         value: moderator,                             inline: true },
+      { name: "🆔 Channel ID", value: `\`${channel.id}\``,                  inline: true },
     )
-    e.set_footer(text=f"{SERVER_NAME} • Duty System")
-    await ctx.send(embed=e, view=DutyView())
-    await ctx.reply("✅ Panel sent.", delete_after=2)
+    .setFooter({ text: `${SERVER_NAME} • Channel Log` })
+    .setTimestamp();
+  if (channel.parent) e.addFields({ name: "🗂️ Category", value: channel.parent.name, inline: true });
+  await log.send({ embeds: [e] });
+});
 
-
-@bot.command()
-async def supportpanel(ctx):
-    if not is_ceo(ctx.author):
-        return await ctx.reply("❌ CEO only.")
-    e = discord.Embed(
-        title=f"{SERVER_NAME} — Support Panel",
-        description=("**Open a ticket to get in touch with the right team member.**\n\n"
-                     "👑 **Talk to Administrator** — Administration\n"
-                     "💬 **Support** — General help\n"
-                     "📋 **Report** — Report a user\n"
-                     "🛒 **Help with a Purchase** — Order assistance\n"
-                     "📌 **Other** — Anything else\n\n"
-                     "*One active ticket at a time.*"),
-        color=discord.Color.from_rgb(20, 20, 40)
+client.on("channelDelete", async channel => {
+  if (!channel.guild) return;
+  const log = channel.guild.channels.cache.get(CHANNEL_DELETE_LOG_CHANNEL_ID);
+  if (!log) return;
+  let moderator = "Unknown";
+  const logs = await channel.guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.ChannelDelete }).catch(() => null);
+  if (logs) moderator = logs.entries.first()?.executor?.toString() ?? "Unknown";
+  const e = new EmbedBuilder()
+    .setTitle("🗑️ Channel Deleted").setColor(0xff0000)
+    .addFields(
+      { name: "📛 Name",       value: `**${channel.name}**`,  inline: true },
+      { name: "📂 Type",       value: String(channel.type),   inline: true },
+      { name: "👤 By",         value: moderator,              inline: true },
+      { name: "🆔 Channel ID", value: `\`${channel.id}\``,   inline: true },
     )
-    e.set_image(url=BANNER_SUPPORT)
-    e.set_thumbnail(url=SERVER_THUMBNAIL_URL)
-    e.set_footer(text=f"{SERVER_NAME} • Support System")
-    await ctx.send(embed=e, view=SupportTicketPanel())
-    await ctx.reply("✅ Panel sent.", delete_after=2)
+    .setFooter({ text: `${SERVER_NAME} • Channel Log` })
+    .setTimestamp();
+  await log.send({ embeds: [e] });
+});
 
-
-@bot.command()
-async def buypanel(ctx):
-    if not is_ceo(ctx.author):
-        return await ctx.reply("❌ CEO only.")
-    e = discord.Embed(
-        title=f"{SERVER_NAME} — Buy Panel",
-        description=("**Ready to make a purchase?**\n\n"
-                     "🛍️ **Buy a Product** — Browse and purchase from our store\n"
-                     "📦 **Make an Order** — Place a custom order\n\n"
-                     "*One active ticket at a time.*"),
-        color=discord.Color.from_rgb(20, 20, 40)
+client.on("roleCreate", async role => {
+  const log = role.guild.channels.cache.get(ROLE_CREATE_LOG_CHANNEL_ID);
+  if (!log) return;
+  let moderator = "Unknown";
+  const logs = await role.guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.RoleCreate }).catch(() => null);
+  if (logs) moderator = logs.entries.first()?.executor?.toString() ?? "Unknown";
+  const e = new EmbedBuilder()
+    .setTitle("🆕 Role Created").setColor(0x00ff00)
+    .addFields(
+      { name: "📛 Name",    value: `**${role.name}**`,    inline: true },
+      { name: "🎨 Color",   value: role.hexColor,         inline: true },
+      { name: "👤 By",      value: moderator,             inline: true },
+      { name: "🆔 Role ID", value: `\`${role.id}\``,     inline: true },
     )
-    e.set_image(url=BANNER_BUY)
-    e.set_thumbnail(url=SERVER_THUMBNAIL_URL)
-    e.set_footer(text=f"{SERVER_NAME} • Buy Panel")
-    await ctx.send(embed=e, view=BuyTicketPanel())
-    await ctx.reply("✅ Panel sent.", delete_after=2)
+    .setFooter({ text: `${SERVER_NAME} • Role Log` })
+    .setTimestamp();
+  await log.send({ embeds: [e] });
+});
 
-
-@bot.command()
-async def servicespanel(ctx):
-    if not is_ceo(ctx.author):
-        return await ctx.reply("❌ CEO only.")
-    e = discord.Embed(
-        title=f"{SERVER_NAME} — Services",
-        description=("**Interested in one of our professional services?**\n\n"
-                     "⚙️ **Buy a Service** — Purchase a premium service\n\n"
-                     "*One active ticket at a time.*"),
-        color=discord.Color.from_rgb(88, 101, 242)
+client.on("roleDelete", async role => {
+  const log = role.guild.channels.cache.get(ROLE_DELETE_LOG_CHANNEL_ID);
+  if (!log) return;
+  let moderator = "Unknown";
+  const logs = await role.guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.RoleDelete }).catch(() => null);
+  if (logs) moderator = logs.entries.first()?.executor?.toString() ?? "Unknown";
+  const e = new EmbedBuilder()
+    .setTitle("🗑️ Role Deleted").setColor(0xff0000)
+    .addFields(
+      { name: "📛 Name",    value: `**${role.name}**`, inline: true },
+      { name: "👤 By",      value: moderator,          inline: true },
+      { name: "🆔 Role ID", value: `\`${role.id}\``,  inline: true },
     )
-    e.set_image(url=BANNER_SERVICES)
-    e.set_thumbnail(url=SERVER_THUMBNAIL_URL)
-    e.set_footer(text=f"{SERVER_NAME} • Services")
-    await ctx.send(embed=e, view=ServicesTicketPanel())
-    await ctx.reply("✅ Panel sent.", delete_after=2)
+    .setFooter({ text: `${SERVER_NAME} • Role Log` })
+    .setTimestamp();
+  await log.send({ embeds: [e] });
+});
 
+client.on("guildMemberUpdate", async (before, after) => {
+  const log = after.guild.channels.cache.get(ROLE_UPDATE_LOG_CHANNEL_ID);
+  if (!log) return;
+  if (after.roles.cache.size > before.roles.cache.size) {
+    const newRole = after.roles.cache.find(r => !before.roles.cache.has(r.id));
+    if (!newRole) return;
+    const logs = await after.guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.MemberRoleUpdate }).catch(() => null);
+    const entry = logs?.entries.find(e => e.target?.id === after.id);
+    const e = new EmbedBuilder()
+      .setTitle("➕ Role Added").setColor(0x00ff00)
+      .setThumbnail(after.user.displayAvatarURL())
+      .addFields(
+        { name: "👤 User",       value: `${after} (\`${after.id}\`)`, inline: true },
+        { name: "🎭 Role",        value: `**${newRole.name}**`,        inline: true },
+        { name: "🛡️ Moderator", value: entry?.executor?.toString() ?? "Unknown", inline: true },
+      )
+      .setFooter({ text: `${SERVER_NAME} • Role Log | Role ID: ${newRole.id}` })
+      .setTimestamp();
+    await log.send({ embeds: [e] });
+  } else if (after.roles.cache.size < before.roles.cache.size) {
+    const removed = before.roles.cache.find(r => !after.roles.cache.has(r.id));
+    if (!removed) return;
+    const logs = await after.guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.MemberRoleUpdate }).catch(() => null);
+    const entry = logs?.entries.find(e => e.target?.id === after.id);
+    const e = new EmbedBuilder()
+      .setTitle("➖ Role Removed").setColor(0xff0000)
+      .setThumbnail(after.user.displayAvatarURL())
+      .addFields(
+        { name: "👤 User",       value: `${after} (\`${after.id}\`)`, inline: true },
+        { name: "🎭 Role",        value: `**${removed.name}**`,        inline: true },
+        { name: "🛡️ Moderator", value: entry?.executor?.toString() ?? "Unknown", inline: true },
+      )
+      .setFooter({ text: `${SERVER_NAME} • Role Log | Role ID: ${removed.id}` })
+      .setTimestamp();
+    await log.send({ embeds: [e] });
+  }
+});
 
-@bot.command()
-async def suggestionpanel(ctx):
-    if not is_ceo(ctx.author):
-        return await ctx.reply("❌ CEO only.")
-    e = discord.Embed(
-        title=f"💡 {SERVER_NAME} — Suggestions",
-        description=("**Have an idea for us?**\n"
-                     "Click the button, write your suggestion and submit it!\n"
-                     "The community votes 👍 / 👎"),
-        color=discord.Color.from_rgb(88, 101, 242)
+// ══════════════════════════════════════════════════════════════
+//  MESSAGE LOGS
+// ══════════════════════════════════════════════════════════════
+client.on("messageUpdate", async (before, after) => {
+  if (before.author?.bot || before.content === after.content) return;
+  const log = before.guild?.channels.cache.get(MESSAGE_EDIT_LOG_CHANNEL_ID);
+  if (!log) return;
+  const e = new EmbedBuilder()
+    .setTitle("✏️ Message Edited").setColor(0xffa500)
+    .setThumbnail(before.author.displayAvatarURL())
+    .addFields(
+      { name: "👤 User",    value: `${before.author} (\`${before.author.id}\`)`, inline: true  },
+      { name: "📢 Channel", value: `${before.channel}`,                          inline: true  },
+      { name: "📝 Before",  value: (before.content || "*[empty]*").slice(0, 1020), inline: false },
+      { name: "📝 After",   value: (after.content  || "*[empty]*").slice(0, 1020), inline: false },
+      { name: "🔗 Link",    value: `[Jump to message](${after.url})`,             inline: false },
     )
-    e.set_image(url=BANNER_SUGGEST)
-    e.set_thumbnail(url=SERVER_THUMBNAIL_URL)
-    e.set_footer(text=f"{SERVER_NAME} • Suggestion System")
-    await ctx.send(embed=e, view=SuggestionPanelView())
-    await ctx.reply("✅ Panel sent.", delete_after=2)
+    .setFooter({ text: `${SERVER_NAME} • Message Log | User ID: ${before.author.id}` })
+    .setTimestamp();
+  await log.send({ embeds: [e] });
+});
 
-
-@bot.command()
-async def reviewpanel(ctx):
-    if not is_ceo(ctx.author):
-        return await ctx.reply("❌ CEO only.")
-    e = discord.Embed(
-        title=f"⭐ {SERVER_NAME} — Reviews",
-        description=("**How was your experience?**\n"
-                     "Click the button, choose your star rating (1–5) and leave a comment!"),
-        color=discord.Color.from_rgb(255, 215, 0)
+client.on("messageDelete", async message => {
+  if (message.author?.bot) return;
+  const log = message.guild?.channels.cache.get(MESSAGE_DELETE_LOG_CHANNEL_ID);
+  if (!log || !message.author) return;
+  const e = new EmbedBuilder()
+    .setTitle("🗑️ Message Deleted").setColor(0xff0000)
+    .setThumbnail(message.author.displayAvatarURL())
+    .addFields(
+      { name: "👤 User",    value: `${message.author} (\`${message.author.id}\`)`, inline: true  },
+      { name: "📢 Channel", value: `${message.channel}`,                           inline: true  },
+      { name: "📝 Content", value: (message.content || "*[no text]*").slice(0, 1020), inline: false },
     )
-    e.set_image(url=BANNER_REVIEW)
-    e.set_thumbnail(url=SERVER_THUMBNAIL_URL)
-    e.set_footer(text=f"{SERVER_NAME} • Review System")
-    await ctx.send(embed=e, view=ReviewPanelView())
-    await ctx.reply("✅ Panel sent.", delete_after=2)
+    .setFooter({ text: `${SERVER_NAME} • Message Log | User ID: ${message.author.id}` })
+    .setTimestamp();
+  if (message.attachments.size)
+    e.addFields({ name: "📎 Files", value: message.attachments.map(a => a.name).join("\n"), inline: false });
+  await log.send({ embeds: [e] });
+});
 
+// ══════════════════════════════════════════════════════════════
+//  MEMBER BAN / KICK TRACKING
+// ══════════════════════════════════════════════════════════════
+client.on("guildBanAdd", async ban => {
+  const logs = await ban.guild.fetchAuditLogs({ limit: 1, type: AuditLogEvent.MemberBan }).catch(() => null);
+  const mod  = logs?.entries.first()?.executor;
+  if (mod) await trackMassAction(ban.guild, mod, "ban");
+});
 
-# ── HELP PANELS ───────────────────────────────────────────────
-@bot.command()
-async def panel(ctx):
-    """Full CEO command reference."""
-    if not is_ceo(ctx.author):
-        return await ctx.reply("❌ CEO only.")
-    e = discord.Embed(title=f"📌 {SERVER_NAME} — CEO Panel",
-                      color=discord.Color.dark_gray(), timestamp=discord.utils.utcnow())
-    e.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
-    e.add_field(name="🛠 Moderation",  value="`!ban` `!kick` `!timeout` `!clearmessage`",                    inline=False)
-    e.add_field(name="📊 Info",        value="`!serverstatus` `!invites [@user]` `!serverinvites` `!scan [@user]`", inline=False)
-    e.add_field(name="🧰 Utility",     value="`!say <msg>` `!say2 <msg>` `!dmall <msg>`",                    inline=False)
-    e.add_field(name="🔍 Security",    value="`!setaltdays <days>` `!togglealtban`",                          inline=False)
-    e.add_field(name="🎫 Panels",      value="`!supportpanel` `!buypanel` `!servicespanel`\n`!suggestionpanel` `!reviewpanel` `!dutypanel`", inline=False)
-    e.set_footer(text=f"{SERVER_NAME} • CEO Panel | {ctx.author}")
-    await ctx.reply(embed=e)
+client.on("guildMemberRemove", async member => {
+  await new Promise(r => setTimeout(r, 1000));
+  const logs = await member.guild.fetchAuditLogs({ limit: 3, type: AuditLogEvent.MemberKick }).catch(() => null);
+  if (logs) {
+    for (const [, entry] of logs.entries) {
+      if (entry.target?.id === member.id && (Date.now() - entry.createdTimestamp) < 5000) {
+        await trackMassAction(member.guild, entry.executor, "kick");
+        break;
+      }
+    }
+  }
 
+  // Invite tracking on leave
+  const uid = member.user.id;
+  if (inviteData[uid]?.invited_by) {
+    const iid = inviteData[uid].invited_by;
+    if (inviteData[iid]) {
+      inviteData[iid].left = (inviteData[iid].left || 0) + 1;
+      inviteData[iid].real = Math.max(0, (inviteData[iid].total || 0) - (inviteData[iid].left || 0));
+      saveJSON(INVITE_FILE, inviteData);
+    }
+  }
 
-@bot.command()
-async def panel2(ctx):
-    """Owner / Co-Owner command reference."""
-    if not is_owner_or_above(ctx.author):
-        return await ctx.reply("❌ Owner / Co-Owner / CEO only.")
-    e = discord.Embed(title=f"📌 {SERVER_NAME} — Owner Panel",
-                      color=discord.Color.gold(), timestamp=discord.utils.utcnow())
-    e.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
-    e.add_field(name="🛠 Moderation", value="`!ban @user [reason]`\n`!kick @user [reason]`\n`!timeout @user <minutes> [reason]`\n`!clearmessage <amount>`", inline=False)
-    e.add_field(name="📊 Info",       value="`!serverstatus`\n`!invites [@user]`\n`!serverinvites`\n`!scan [@user]`",                                         inline=False)
-    e.add_field(name="🧰 Utility",    value="`!say <msg>`\n`!say2 <msg>`",                                                                                     inline=False)
-    e.set_footer(text=f"{SERVER_NAME} • Owner Panel | {ctx.author}")
-    await ctx.reply(embed=e)
+  await updateVoiceChannels(member.guild);
 
+  const log = member.guild.channels.cache.get(MEMBER_LEAVE_LOG_CHANNEL_ID);
+  if (!log) return;
+  const roles = member.roles.cache.filter(r => r.name !== "@everyone").map(r => `${r}`).join(" ");
+  const e = new EmbedBuilder()
+    .setTitle("🔴 Member Left").setColor(0xff0000)
+    .setThumbnail(member.user.displayAvatarURL())
+    .addFields(
+      { name: "👤 User",        value: `${member.user} (\`${member.id}\`)`, inline: true },
+      { name: "📛 Username",    value: member.user.tag,                     inline: true },
+      { name: "👥 Members now", value: String(member.guild.memberCount),    inline: true },
+      { name: "🎭 Roles",       value: roles || "None",                     inline: false },
+    )
+    .setFooter({ text: `${SERVER_NAME} • Member Log | User ID: ${member.id}` })
+    .setTimestamp();
+  await log.send({ embeds: [e] });
+});
 
-@bot.command()
-async def panel3(ctx):
-    """Staff / Management command reference."""
-    if not is_staff_or_above(ctx.author):
-        return await ctx.reply("❌ You don't have permission to use this command.")
-    e = discord.Embed(title=f"📌 {SERVER_NAME} — Staff Panel",
-                      color=discord.Color.blurple(), timestamp=discord.utils.utcnow())
-    e.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
-    e.add_field(name="🛠 Moderation", value="`!ban @user [reason]`\n`!kick @user [reason]`\n`!timeout @user <minutes> [reason]`\n`!clearmessage <amount>`", inline=False)
-    e.add_field(name="📊 Info",       value="`!serverstatus`\n`!invites [@user]`\n`!serverinvites`\n`!scan [@user]`",                                         inline=False)
-    e.set_footer(text=f"{SERVER_NAME} • Staff Panel | {ctx.author}")
-    await ctx.reply(embed=e)
+// ══════════════════════════════════════════════════════════════
+//  MESSAGE HANDLER (security + commands)
+// ══════════════════════════════════════════════════════════════
+client.on("messageCreate", async message => {
+  if (!message.guild) return;
 
-# ══════════════════════════════════════════════════════════════
-#  ON READY
-# ══════════════════════════════════════════════════════════════
-@bot.event
-async def on_ready():
-    print(f"✅ Logged in as {bot.user}")
+  const author = message.author;
+  const guild  = message.guild;
+  const member = message.member;
 
-    # Re-register all persistent views
-    for v in [
-        SupportTicketPanel(),
-        BuyTicketPanel(),
-        ServicesTicketPanel(),
-        TicketCloseView(),
-        DutyView(),
-        SuggestionPanelView(),
-        ReviewPanelView(),
-        StarSelectView(),
-    ]:
-        bot.add_view(v)
+  // ── Token detection ─────────────────────────────────────────
+  if (!author.bot && TOKEN_PATTERN.test(message.content)) {
+    await message.delete().catch(() => {});
+    const e = new EmbedBuilder()
+      .setTitle("🔑 TOKEN DETECTED & DELETED!")
+      .setDescription(`${author} sent something that looks like a **Bot Token**!\nThe message has been deleted.\n\n⚠️ **If it's your token, regenerate it IMMEDIATELY!**`)
+      .setColor(0x8B0000)
+      .setThumbnail(author.displayAvatarURL())
+      .addFields(
+        { name: "👤 User",    value: `${author} (\`${author.id}\`)`, inline: true },
+        { name: "📢 Channel", value: `${message.channel}`,           inline: true },
+      )
+      .setFooter({ text: `${SERVER_NAME} • Security Log` })
+      .setTimestamp();
+    await sendSecurityAlert(guild, e, true);
+    return;
+  }
 
-    guild = bot.get_guild(GUILD_ID)
-    if guild:
-        await update_voice_channels(guild)
-        try:
-            invs = await guild.invites()
-            invite_cache[guild.id] = {i.code: i.uses for i in invs}
-            print(f"✅ Loaded {len(invs)} invite(s) into cache.")
-        except Exception as e:
-            print(f"⚠️ Invite cache error: {e}")
+  // ── Link detection ──────────────────────────────────────────
+  if (!author.bot && URL_PATTERN.test(message.content)) {
+    URL_PATTERN.lastIndex = 0;
+    const exempt = [CEO_ROLE_ID, OWNER_ROLE_ID];
+    const isEx   = exempt.some(r => member?.roles.cache.has(r));
+    if (!isEx && !member?.permissions.has(PermissionsBitField.Flags.Administrator)) {
+      await message.delete().catch(() => {});
+      await member?.timeout(60 * 60 * 1000, "Link detected").catch(() => {});
+      const e = new EmbedBuilder()
+        .setTitle("🔗 Link Detected & Deleted")
+        .setDescription(`${author} sent a link and received a **1 hour timeout**.`)
+        .setColor(0xffa500)
+        .setThumbnail(author.displayAvatarURL())
+        .addFields(
+          { name: "👤 User",    value: `${author} (\`${author.id}\`)`, inline: true },
+          { name: "📢 Channel", value: `${message.channel}`,           inline: true },
+        )
+        .setFooter({ text: `${SERVER_NAME} • Security Log` })
+        .setTimestamp();
+      await sendSecurityAlert(guild, e, false);
+      return;
+    }
+  }
+  URL_PATTERN.lastIndex = 0;
 
-    await bot.change_presence(activity=discord.Game(name=SERVER_NAME))
-    print(f"🚀 {SERVER_NAME} Bot is fully online!")
+  // ── Spam detection ──────────────────────────────────────────
+  if (!author.bot) {
+    const uid = author.id;
+    const now = Date.now() / 1000;
+    if (!spamTracker[uid]) spamTracker[uid] = [];
+    spamTracker[uid].push(now);
+    spamTracker[uid] = spamTracker[uid].filter(t => now - t < 5);
+    if (spamTracker[uid].length >= 5) {
+      spamTracker[uid] = [];
+      if (!member?.permissions.has(PermissionsBitField.Flags.Administrator)) {
+        await member?.timeout(10 * 60 * 1000, "Spam").catch(() => {});
+        const e = new EmbedBuilder()
+          .setTitle("🚫 Spam Detected")
+          .setDescription(`${author} was spamming and received a **10 minute timeout**.`)
+          .setColor(0xff0000)
+          .setThumbnail(author.displayAvatarURL())
+          .addFields(
+            { name: "👤 User",    value: `${author} (\`${author.id}\`)`, inline: true },
+            { name: "📢 Channel", value: `${message.channel}`,           inline: true },
+          )
+          .setFooter({ text: `${SERVER_NAME} • Security Log` })
+          .setTimestamp();
+        await sendSecurityAlert(guild, e, false);
+      }
+    }
+  }
 
+  // ── Command prefix ──────────────────────────────────────────
+  if (!message.content.startsWith("!")) return;
+  const args    = message.content.slice(1).trim().split(/ +/);
+  const command = args.shift().toLowerCase();
 
-# ══════════════════════════════════════════════════════════════
-#  ENTRY POINT
-# ══════════════════════════════════════════════════════════════
-if __name__ == "__main__":
-    keep_alive()
-    bot.run(TOKEN)
+  // ── MODERATION ──────────────────────────────────────────────
+  if (command === "ban") {
+    if (!hasModPerms(member)) return message.reply("❌ You don't have permission to use this command.");
+    const target = message.mentions.members.first();
+    if (!target) return message.reply("Usage: `!ban @user [reason]`");
+    const reason = args.slice(1).join(" ") || "No reason provided";
+    await target.ban({ reason });
+    await message.reply(`🔨 **${target.user.tag}** has been banned.\n📌 Reason: ${reason}`);
+    const log = guild.channels.cache.get(BOT_LOG_ID);
+    if (log) await log.send(`🔨 **${author.tag}** banned **${target.user.tag}** — ${reason}`);
+    return;
+  }
+
+  if (command === "kick") {
+    if (!hasModPerms(member)) return message.reply("❌ You don't have permission to use this command.");
+    const target = message.mentions.members.first();
+    if (!target) return message.reply("Usage: `!kick @user [reason]`");
+    const reason = args.slice(1).join(" ") || "No reason provided";
+    await target.kick(reason);
+    await message.reply(`👢 **${target.user.tag}** has been kicked.\n📌 Reason: ${reason}`);
+    const log = guild.channels.cache.get(BOT_LOG_ID);
+    if (log) await log.send(`👢 **${author.tag}** kicked **${target.user.tag}** — ${reason}`);
+    return;
+  }
+
+  if (command === "timeout") {
+    if (!hasModPerms(member)) return message.reply("❌ You don't have permission to use this command.");
+    const target  = message.mentions.members.first();
+    const minutes = parseInt(args[1]);
+    if (!target || !minutes) return message.reply("Usage: `!timeout @user <minutes> [reason]`");
+    const reason = args.slice(2).join(" ") || "No reason provided";
+    await target.timeout(minutes * 60 * 1000, reason);
+    await message.reply(`⏳ **${target.user.tag}** has been timed out for **${minutes} minute(s)**.\n📌 Reason: ${reason}`);
+    const log = guild.channels.cache.get(BOT_LOG_ID);
+    if (log) await log.send(`⏳ **${author.tag}** timed out **${target.user.tag}** for ${minutes}min — ${reason}`);
+    return;
+  }
+
+  if (command === "clearmessage") {
+    if (!hasModPerms(member)) return message.reply("❌ You don't have permission to use this command.");
+    const amount = parseInt(args[0]);
+    if (!amount) return message.reply("Usage: `!clearmessage <amount>`");
+    await message.channel.bulkDelete(amount + 1, true);
+    const m = await message.channel.send(`🧹 Deleted **${amount}** message(s).`);
+    setTimeout(() => m.delete().catch(() => {}), 3000);
+    return;
+  }
+
+  // ── INFO ────────────────────────────────────────────────────
+  if (command === "serverstatus") {
+    if (!isStaffOrAbove(member)) return message.reply("❌ You don't have permission to use this command.");
+    const g = message.guild;
+    await g.members.fetch();
+    const e = new EmbedBuilder()
+      .setTitle("📊 Server Status").setColor(0x5865f2)
+      .setThumbnail(g.iconURL())
+      .addFields(
+        { name: "👤 Members", value: String(g.members.cache.filter(m => !m.user.bot).size), inline: true },
+        { name: "🤖 Bots",    value: String(g.members.cache.filter(m => m.user.bot).size),  inline: true },
+        { name: "🟢 Online",  value: String(g.members.cache.filter(m => m.presence?.status && m.presence.status !== "offline").size), inline: true },
+        { name: "🚀 Boosts",  value: String(g.premiumSubscriptionCount), inline: true },
+      )
+      .setFooter({ text: `${SERVER_NAME} • Server Status` })
+      .setTimestamp();
+    return message.reply({ embeds: [e] });
+  }
+
+  if (command === "invites") {
+    if (!isStaffOrAbove(member)) return message.reply("❌ You don't have permission to use this command.");
+    const target = message.mentions.members.first() || member;
+    const uid    = target.user.id;
+    const d      = inviteData[uid] || { total: 0, real: 0, left: 0 };
+    const e = new EmbedBuilder()
+      .setTitle(`📨 Invites — ${target.displayName}`).setColor(0x5865f2)
+      .setThumbnail(target.user.displayAvatarURL())
+      .addFields(
+        { name: "📊 Total", value: String(d.total || 0), inline: true },
+        { name: "✅ Real",  value: String(d.real  || 0), inline: true },
+        { name: "🚪 Left", value: String(d.left  || 0), inline: true },
+      )
+      .setFooter({ text: `${SERVER_NAME} • Invite Log` })
+      .setTimestamp();
+    return message.reply({ embeds: [e] });
+  }
+
+  if (command === "serverinvites") {
+    if (!isStaffOrAbove(member)) return message.reply("❌ You don't have permission to use this command.");
+    const entries = Object.entries(inviteData)
+      .filter(([, d]) => typeof d === "object" && (d.total || 0) > 0)
+      .map(([uid, d]) => {
+        const m = guild.members.cache.get(uid);
+        return [m ? m.displayName : `User ${uid}`, d.total || 0, d.real || 0, d.left || 0];
+      })
+      .sort((a, b) => b[1] - a[1]);
+
+    const medals = ["🥇", "🥈", "🥉"];
+    let desc = entries.slice(0, 20).map(([name, total, real, left], i) =>
+      `${i < 3 ? medals[i] : `**#${i + 1}**`} **${name}** — \`${total}\` total | \`${real}\` real | \`${left}\` left`
+    ).join("\n") || "No invite data available yet.";
+
+    const e = new EmbedBuilder()
+      .setTitle(`📨 Server Invites — ${guild.name}`).setColor(0x5865f2)
+      .setThumbnail(guild.iconURL())
+      .setImage(BANNER_SUPPORT)
+      .setDescription(desc)
+      .setFooter({ text: `${SERVER_NAME} • ${guild.memberCount} total members` })
+      .setTimestamp();
+    return message.channel.send({ embeds: [e] });
+  }
+
+  if (command === "scan") {
+    if (!isStaffOrAbove(member)) return message.reply("❌ You don't have permission to use this command.");
+    await message.reply("🔍 Scanning...").then(m => setTimeout(() => m.delete().catch(() => {}), 2000));
+    const target = message.mentions.members.first();
+
+    if (target) {
+      const ageDays = Math.floor((Date.now() - target.user.createdTimestamp) / 86400000);
+      const actions = [];
+      const actionLabels = {
+        [AuditLogEvent.MemberBan]:       "🔨 Ban",
+        [AuditLogEvent.MemberKick]:      "👢 Kick",
+        [AuditLogEvent.MemberRoleUpdate]:"🎭 Role Update",
+        [AuditLogEvent.ChannelDelete]:   "🗑️ Channel Delete",
+        [AuditLogEvent.RoleDelete]:      "🗑️ Role Delete",
+      };
+      const logs = await guild.fetchAuditLogs({ limit: 50 }).catch(() => null);
+      if (logs) {
+        for (const [, entry] of logs.entries) {
+          if (entry.executor?.id === target.id && actionLabels[entry.action]) {
+            actions.push(`${actionLabels[entry.action]} → \`${entry.target?.name ?? String(entry.target)}\` <t:${Math.floor(entry.createdTimestamp / 1000)}:R>`);
+            if (actions.length >= 8) break;
+          }
+        }
+      }
+      const isSus = ageDays < ALT_ACCOUNT_AGE_DAYS || target.permissions.has(PermissionsBitField.Flags.Administrator);
+      const e = new EmbedBuilder()
+        .setTitle(`🔍 Scan — ${target.displayName}`)
+        .setColor(isSus ? 0x8B0000 : 0x5865f2)
+        .setThumbnail(target.user.displayAvatarURL())
+        .addFields(
+          { name: "👤 User",    value: `${target.user.tag} (\`${target.id}\`)`, inline: true },
+          { name: "📅 Age",     value: `${ageDays} days ${ageDays < ALT_ACCOUNT_AGE_DAYS ? "⚠️ Possible ALT" : "✅"}`, inline: true },
+          { name: "📆 Created", value: `<t:${Math.floor(target.user.createdTimestamp / 1000)}:F>`, inline: true },
+          { name: "🔑 Permissions", value:
+            `Administrator: ${target.permissions.has(PermissionsBitField.Flags.Administrator) ? "✅" : "❌"}\n` +
+            `Ban: ${target.permissions.has(PermissionsBitField.Flags.BanMembers) ? "✅" : "❌"}\n` +
+            `Kick: ${target.permissions.has(PermissionsBitField.Flags.KickMembers) ? "✅" : "❌"}\n` +
+            `Manage Guild: ${target.permissions.has(PermissionsBitField.Flags.ManageGuild) ? "✅" : "❌"}`,
+            inline: true },
+          { name: "🎭 Roles", value: target.roles.cache.filter(r => r.name !== "@everyone").map(r => `${r}`).join(", ") || "None", inline: false },
+          { name: `📋 Recent Actions (${actions.length})`, value: actions.join("\n") || "None found", inline: false },
+        )
+        .setFooter({ text: `${SERVER_NAME} • Scan` })
+        .setTimestamp();
+      return message.channel.send({ embeds: [e] });
+    }
+
+    // Server-wide scan
+    await guild.members.fetch();
+    const admins = [], newAccs = [], bots = [], sus = [];
+    for (const [, m] of guild.members.cache) {
+      const ageDays = Math.floor((Date.now() - m.user.createdTimestamp) / 86400000);
+      if (m.user.bot) {
+        const iv = m.user.flags?.has("VerifiedBot") ?? false;
+        bots.push(`${iv ? "✅" : "⚠️"} ${m} (\`${m.id}\`)`);
+      }
+      if (!m.user.bot && m.permissions.has(PermissionsBitField.Flags.Administrator)) admins.push(`${m} (\`${m.id}\`)`);
+      if (!m.user.bot && ageDays < ALT_ACCOUNT_AGE_DAYS) newAccs.push(`${m} — ${ageDays} days`);
+      if (!m.user.bot && m.permissions.has(PermissionsBitField.Flags.Administrator) && ageDays < ALT_ACCOUNT_AGE_DAYS) sus.push(`🚨 ${m} — Admin + ${ageDays} days`);
+    }
+    const e = new EmbedBuilder()
+      .setTitle(`🔍 Server Scan — ${guild.name}`).setColor(0xff8c00)
+      .addFields(
+        { name: `👑 Administrators (${admins.length})`,                          value: admins.slice(0, 10).join("\n") || "None", inline: false },
+        { name: `🤖 Bots (${bots.length}) ✅/⚠️`,                              value: bots.slice(0, 10).join("\n")   || "None", inline: false },
+        { name: `⚠️ New accounts < ${ALT_ACCOUNT_AGE_DAYS}d (${newAccs.length})`, value: newAccs.slice(0, 10).join("\n") || "None", inline: false },
+        { name: `🚨 Suspicious (${sus.length})`,                                 value: sus.slice(0, 10).join("\n")    || "✅ None", inline: false },
+      )
+      .setFooter({ text: `${SERVER_NAME} • Scan | ${guild.memberCount} members` })
+      .setTimestamp();
+    return message.channel.send({ embeds: [e] });
+  }
+
+  // ── UTILITY ─────────────────────────────────────────────────
+  if (command === "say") {
+    if (!isOwnerOrAbove(member)) return message.reply("❌ Owner / Co-Owner / CEO only.");
+    const text = args.join(" ");
+    if (!text) return message.reply("Usage: `!say <message>`");
+    await message.channel.send(text);
+    await message.delete().catch(() => {});
+    return;
+  }
+
+  if (command === "say2") {
+    if (!isOwnerOrAbove(member)) return message.reply("❌ Owner / Co-Owner / CEO only.");
+    const text = args.join(" ");
+    if (!text) return message.reply("Usage: `!say2 <message>`");
+    const e = new EmbedBuilder()
+      .setDescription(text)
+      .setColor(0x141428)
+      .setTimestamp();
+    if (guild.iconURL()) e.setThumbnail(guild.iconURL()).setFooter({ text: guild.name, iconURL: guild.iconURL() });
+    await message.channel.send({ embeds: [e] });
+    await message.delete().catch(() => {});
+    return;
+  }
+
+  if (command === "dmall") {
+    if (!isCeo(member)) return message.reply("❌ CEO only.");
+    const text = args.join(" ");
+    if (!text) return message.reply("Usage: `!dmall <message>`");
+    await guild.members.fetch();
+    let sent = 0, failed = 0;
+    for (const [, m] of guild.members.cache) {
+      if (m.user.bot) continue;
+      const e = new EmbedBuilder()
+        .setDescription(text).setColor(0x141428)
+        .setTimestamp();
+      if (guild.iconURL()) e.setThumbnail(guild.iconURL());
+      e.setFooter({ text: `Sent by: ${author.displayName} • ${new Date().toUTCString()}`, iconURL: author.displayAvatarURL() });
+      await m.user.send({ embeds: [e] }).then(() => sent++).catch(() => failed++);
+    }
+    return message.reply(`📨 Delivered to **${sent}** member(s). ❌ Failed: **${failed}**.`);
+  }
+
+  // ── SECURITY ─────────────────────────────────────────────────
+  if (command === "setaltdays") {
+    if (!isCeo(member)) return message.reply("❌ CEO only.");
+    const days = parseInt(args[0]);
+    if (!days || days < 1) return message.reply(`Current threshold: **${ALT_ACCOUNT_AGE_DAYS} days**\nUsage: \`!setaltdays <days>\``);
+    ALT_ACCOUNT_AGE_DAYS = days;
+    return message.reply(`✅ New alt threshold: **${days} days**`);
+  }
+
+  if (command === "togglealtban") {
+    if (!isCeo(member)) return message.reply("❌ CEO only.");
+    ALT_AUTO_KICK = !ALT_AUTO_KICK;
+    return message.reply(`Alt auto-kick: ${ALT_AUTO_KICK ? "✅ **Enabled**" : "❌ **Disabled**"}`);
+  }
+
+  // ── PANELS ───────────────────────────────────────────────────
+  if (command === "dutypanel") {
+    if (!isCeo(member)) return message.reply("❌ CEO only.");
+    const e = new EmbedBuilder()
+      .setTitle("🟢 Staff Duty Panel")
+      .setDescription("Press **On Duty** when your shift starts and **Off Duty** when it ends.\n\n📋 **Duty Status** — See who is on duty right now\n🏆 **Leaderboard** — All-time duty hours")
+      .setColor(0x00ff00)
+      .setFooter({ text: `${SERVER_NAME} • Duty System` });
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId("duty_on").setLabel("🟢 On Duty").setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId("duty_off").setLabel("🔴 Off Duty").setStyle(ButtonStyle.Danger),
+    );
+    const row2 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId("duty_status").setLabel("📋 Duty Status").setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId("duty_leaderboard_btn").setLabel("🏆 Leaderboard").setStyle(ButtonStyle.Secondary),
+    );
+    await message.channel.send({ embeds: [e], components: [row, row2] });
+    const m = await message.reply("✅ Panel sent.");
+    setTimeout(() => m.delete().catch(() => {}), 2000);
+    return;
+  }
+
+  if (command === "supportpanel") {
+    if (!isCeo(member)) return message.reply("❌ CEO only.");
+    const e = new EmbedBuilder()
+      .setTitle(`${SERVER_NAME} — Support Panel`)
+      .setDescription("**Open a ticket to get in touch with the right team member.**\n\n👑 **Talk to Administrator** — Administration\n💬 **Support** — General help\n📋 **Report** — Report a user\n🛒 **Help with a Purchase** — Order assistance\n📌 **Other** — Anything else\n\n*One active ticket at a time.*")
+      .setColor(0x141428)
+      .setImage(BANNER_SUPPORT)
+      .setThumbnail(SERVER_THUMBNAIL_URL)
+      .setFooter({ text: `${SERVER_NAME} • Support System` });
+    const row = new ActionRowBuilder().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId("support_ticket_select")
+        .setPlaceholder("📂 Select a category...")
+        .addOptions([
+          { label: "Talk to Administrator", description: "Direct line to the Administration",   emoji: "👑", value: "admin"    },
+          { label: "Support",               description: "General support from our team",        emoji: "💬", value: "support"  },
+          { label: "Report",                description: "Report a user or incident",            emoji: "📋", value: "report"   },
+          { label: "Help with a Purchase",  description: "Need help with an order or payment?", emoji: "🛒", value: "purchase" },
+          { label: "Other",                 description: "Anything that doesn't fit above",      emoji: "📌", value: "other"    },
+        ])
+    );
+    await message.channel.send({ embeds: [e], components: [row] });
+    const m = await message.reply("✅ Panel sent.");
+    setTimeout(() => m.delete().catch(() => {}), 2000);
+    return;
+  }
+
+  if (command === "buypanel") {
+    if (!isCeo(member)) return message.reply("❌ CEO only.");
+    const e = new EmbedBuilder()
+      .setTitle(`${SERVER_NAME} — Buy Panel`)
+      .setDescription("**Ready to make a purchase?**\n\n🛍️ **Buy a Product** — Browse and purchase from our store\n📦 **Make an Order** — Place a custom order\n\n*One active ticket at a time.*")
+      .setColor(0x141428)
+      .setImage(BANNER_BUY)
+      .setThumbnail(SERVER_THUMBNAIL_URL)
+      .setFooter({ text: `${SERVER_NAME} • Buy Panel` });
+    const row = new ActionRowBuilder().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId("buy_ticket_select")
+        .setPlaceholder("🛒 Select a category...")
+        .addOptions([
+          { label: "Buy a Product", description: "Purchase a product from our store", emoji: "🛍️", value: "buy_product" },
+          { label: "Make an Order", description: "Place a custom order",              emoji: "📦", value: "make_order"  },
+        ])
+    );
+    await message.channel.send({ embeds: [e], components: [row] });
+    const m = await message.reply("✅ Panel sent.");
+    setTimeout(() => m.delete().catch(() => {}), 2000);
+    return;
+  }
+
+  if (command === "servicespanel") {
+    if (!isCeo(member)) return message.reply("❌ CEO only.");
+    const e = new EmbedBuilder()
+      .setTitle(`${SERVER_NAME} — Services`)
+      .setDescription("**Interested in one of our professional services?**\n\n⚙️ **Buy a Service** — Purchase a premium service\n\n*One active ticket at a time.*")
+      .setColor(0x5865f2)
+      .setImage(BANNER_SERVICES)
+      .setThumbnail(SERVER_THUMBNAIL_URL)
+      .setFooter({ text: `${SERVER_NAME} • Services` });
+    const row = new ActionRowBuilder().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId("services_ticket_select")
+        .setPlaceholder("⚙️ Select a service...")
+        .addOptions([
+          { label: "Buy a Service", description: "Purchase a service from Glorious Shop", emoji: "⚙️", value: "buy_service" },
+        ])
+    );
+    await message.channel.send({ embeds: [e], components: [row] });
+    const m = await message.reply("✅ Panel sent.");
+    setTimeout(() => m.delete().catch(() => {}), 2000);
+    return;
+  }
+
+  if (command === "suggestionpanel") {
+    if (!isCeo(member)) return message.reply("❌ CEO only.");
+    const e = new EmbedBuilder()
+      .setTitle(`💡 ${SERVER_NAME} — Suggestions`)
+      .setDescription("**Have an idea for us?**\nClick the button, write your suggestion and submit it!\nThe community votes 👍 / 👎")
+      .setColor(0x5865f2)
+      .setImage(BANNER_SUGGEST)
+      .setThumbnail(SERVER_THUMBNAIL_URL)
+      .setFooter({ text: `${SERVER_NAME} • Suggestion System` });
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId("make_suggestion_btn").setLabel("💡 Make a Suggestion").setStyle(ButtonStyle.Primary)
+    );
+    await message.channel.send({ embeds: [e], components: [row] });
+    const m = await message.reply("✅ Panel sent.");
+    setTimeout(() => m.delete().catch(() => {}), 2000);
+    return;
+  }
+
+  if (command === "reviewpanel") {
+    if (!isCeo(member)) return message.reply("❌ CEO only.");
+    const e = new EmbedBuilder()
+      .setTitle(`⭐ ${SERVER_NAME} — Reviews`)
+      .setDescription("**How was your experience?**\nClick the button, choose your star rating (1–5) and leave a comment!")
+      .setColor(0xffd700)
+      .setImage(BANNER_REVIEW)
+      .setThumbnail(SERVER_THUMBNAIL_URL)
+      .setFooter({ text: `${SERVER_NAME} • Review System` });
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId("make_review_btn").setLabel("⭐ Write a Review").setStyle(ButtonStyle.Primary)
+    );
+    await message.channel.send({ embeds: [e], components: [row] });
+    const m = await message.reply("✅ Panel sent.");
+    setTimeout(() => m.delete().catch(() => {}), 2000);
+    return;
+  }
+
+  // ── HELP PANELS ──────────────────────────────────────────────
+  if (command === "panel") {
+    if (!isCeo(member)) return message.reply("❌ CEO only.");
+    const e = new EmbedBuilder()
+      .setTitle(`📌 ${SERVER_NAME} — CEO Panel`).setColor(0x2b2b2b)
+      .setThumbnail(guild.iconURL())
+      .addFields(
+        { name: "🛠 Moderation",  value: "`!ban` `!kick` `!timeout` `!clearmessage`", inline: false },
+        { name: "📊 Info",        value: "`!serverstatus` `!invites [@user]` `!serverinvites` `!scan [@user]`", inline: false },
+        { name: "🧰 Utility",     value: "`!say <msg>` `!say2 <msg>` `!dmall <msg>`", inline: false },
+        { name: "🔍 Security",    value: "`!setaltdays <days>` `!togglealtban`", inline: false },
+        { name: "🎫 Panels",      value: "`!supportpanel` `!buypanel` `!servicespanel`\n`!suggestionpanel` `!reviewpanel` `!dutypanel`", inline: false },
+      )
+      .setFooter({ text: `${SERVER_NAME} • CEO Panel | ${author.tag}` })
+      .setTimestamp();
+    return message.reply({ embeds: [e] });
+  }
+
+  if (command === "panel2") {
+    if (!isOwnerOrAbove(member)) return message.reply("❌ Owner / Co-Owner / CEO only.");
+    const e = new EmbedBuilder()
+      .setTitle(`📌 ${SERVER_NAME} — Owner Panel`).setColor(0xffd700)
+      .setThumbnail(guild.iconURL())
+      .addFields(
+        { name: "🛠 Moderation", value: "`!ban @user [reason]`\n`!kick @user [reason]`\n`!timeout @user <minutes> [reason]`\n`!clearmessage <amount>`", inline: false },
+        { name: "📊 Info",       value: "`!serverstatus`\n`!invites [@user]`\n`!serverinvites`\n`!scan [@user]`", inline: false },
+        { name: "🧰 Utility",    value: "`!say <msg>`\n`!say2 <msg>`", inline: false },
+      )
+      .setFooter({ text: `${SERVER_NAME} • Owner Panel | ${author.tag}` })
+      .setTimestamp();
+    return message.reply({ embeds: [e] });
+  }
+
+  if (command === "panel3") {
+    if (!isStaffOrAbove(member)) return message.reply("❌ You don't have permission to use this command.");
+    const e = new EmbedBuilder()
+      .setTitle(`📌 ${SERVER_NAME} — Staff Panel`).setColor(0x5865f2)
+      .setThumbnail(guild.iconURL())
+      .addFields(
+        { name: "🛠 Moderation", value: "`!ban @user [reason]`\n`!kick @user [reason]`\n`!timeout @user <minutes> [reason]`\n`!clearmessage <amount>`", inline: false },
+        { name: "📊 Info",       value: "`!serverstatus`\n`!invites [@user]`\n`!serverinvites`\n`!scan [@user]`", inline: false },
+      )
+      .setFooter({ text: `${SERVER_NAME} • Staff Panel | ${author.tag}` })
+      .setTimestamp();
+    return message.reply({ embeds: [e] });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
+//  MEMBER JOIN
+// ══════════════════════════════════════════════════════════════
+client.on("guildMemberAdd", async member => {
+  const guild = member.guild;
+
+  // Bot verification
+  if (member.user.bot) {
+    if (WHITELISTED_BOT_IDS.has(member.id)) return;
+    for (const [, ch] of guild.channels.cache) {
+      await ch.permissionOverwrites.create(member, {
+        SendMessages: false, ViewChannel: false, Connect: false, Speak: false,
+      }, { reason: "Bot pending verification" }).catch(() => {});
+    }
+    const isVerified = member.user.flags?.has("VerifiedBot") ?? false;
+    const bt    = isVerified ? "✅ Verified Bot" : "⚠️ Unverified / Custom Bot";
+    const color = isVerified ? 0xffff00 : 0x8B0000;
+    const e = new EmbedBuilder()
+      .setTitle(`🤖 New Bot ${!isVerified ? "(UNVERIFIED ⚠️)" : "(Verified)"}`)
+      .setDescription(`**${member.user.tag}** (${member}) joined.\n\n**Type:** ${bt}\n**ID:** \`${member.id}\`\n**Created:** <t:${Math.floor(member.user.createdTimestamp / 1000)}:F>\n\n⚠️ Zero permissions until accepted.`)
+      .setColor(color)
+      .setThumbnail(member.user.displayAvatarURL())
+      .setFooter({ text: `${SERVER_NAME} • Security Log` })
+      .setTimestamp();
+    const sl = guild.channels.cache.get(SECURITY_LOG_CHANNEL_ID);
+    if (sl) {
+      const ownerRole = guild.roles.cache.get(OWNER_ROLE_ID);
+      const acceptBtn = new ButtonBuilder().setCustomId(`bot_accept_${member.id}`).setLabel("✅ Accept Bot").setStyle(ButtonStyle.Success);
+      const denyBtn   = new ButtonBuilder().setCustomId(`bot_deny_${member.id}`).setLabel("❌ Deny Bot (Kick)").setStyle(ButtonStyle.Danger);
+      const row       = new ActionRowBuilder().addComponents(acceptBtn, denyBtn);
+      const msg = await sl.send({ content: ownerRole?.toString() ?? null, embeds: [e], components: [row] });
+      pendingBots[member.id] = msg.id;
+    }
+    return;
+  }
+
+  // Alt detection
+  const ageDays = Math.floor((Date.now() - member.user.createdTimestamp) / 86400000);
+  if (ageDays < ALT_ACCOUNT_AGE_DAYS) {
+    const e = new EmbedBuilder()
+      .setTitle("🚨 ALT ACCOUNT DETECTED!").setColor(0x8B0000)
+      .setThumbnail(member.user.displayAvatarURL())
+      .addFields(
+        { name: "👤 User",    value: `${member} (\`${member.id}\`)`, inline: false },
+        { name: "📅 Age",     value: `**${ageDays} days**`,          inline: true  },
+        { name: "📆 Created", value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:F>`, inline: true },
+      )
+      .setFooter({ text: `${SERVER_NAME} • Security Log` })
+      .setTimestamp();
+    if (ALT_AUTO_KICK) {
+      await member.kick(`Alt account — age: ${ageDays} days`)
+        .then(() => e.addFields({ name: "⚡ Action", value: "✅ **Auto-kicked**", inline: false }))
+        .catch(err => e.addFields({ name: "⚡ Action", value: `❌ Failed: ${err}`, inline: false }));
+    } else {
+      e.addFields({ name: "⚡ Action", value: "⚠️ Alert only", inline: false });
+    }
+    await sendSecurityAlert(guild, e, true);
+    if (ALT_AUTO_KICK) return;
+  }
+
+  // Auto-role
+  const autoRole = guild.roles.cache.get(AUTOROLE_ID);
+  if (autoRole) await member.roles.add(autoRole).catch(() => {});
+
+  // Invite tracking
+  try {
+    const newInvites = await guild.invites.fetch();
+    const oldInvites = inviteCache.get(guild.id) || new Map();
+    let inviter = null;
+    for (const [code, invite] of newInvites) {
+      const old = oldInvites.get(code) || 0;
+      if (invite.uses > old) { inviter = invite.inviter; break; }
+    }
+    inviteCache.set(guild.id, new Map(newInvites.map(i => [i.code, i.uses])));
+    if (inviter) {
+      const iid = inviter.id;
+      const mid = member.user.id;
+      if (!inviteData[mid]) inviteData[mid] = {};
+      inviteData[mid].invited_by = iid;
+      if (!inviteData[iid]) inviteData[iid] = { total: 0, real: 0, left: 0 };
+      inviteData[iid].total = (inviteData[iid].total || 0) + 1;
+      inviteData[iid].real  = (inviteData[iid].total || 0) - (inviteData[iid].left || 0);
+      saveJSON(INVITE_FILE, inviteData);
+      const il = guild.channels.cache.get(INVITE_LOG_CHANNEL_ID);
+      if (il) {
+        const e = new EmbedBuilder()
+          .setTitle("📨 New Invite")
+          .setDescription(`${member} joined via ${inviter}'s invite`)
+          .setColor(0x00ff00)
+          .setThumbnail(member.user.displayAvatarURL())
+          .addFields({ name: "📊 Inviter Stats", value:
+            `**Name:** ${inviter.displayName ?? inviter.username}\n` +
+            `**Total:** ${inviteData[iid].total}\n**Real:** ${inviteData[iid].real}\n**Left:** ${inviteData[iid].left}`,
+            inline: false })
+          .setFooter({ text: `${SERVER_NAME} • Invite Log | User ID: ${member.id}` })
+          .setTimestamp();
+        await il.send({ embeds: [e] });
+      }
+    }
+  } catch (ex) { console.error("Invite error:", ex); }
+
+  // Join log
+  const log = guild.channels.cache.get(MEMBER_JOIN_LOG_CHANNEL_ID);
+  if (log) {
+    const e = new EmbedBuilder()
+      .setTitle("🟢 Member Joined").setColor(0x00ff00)
+      .setThumbnail(member.user.displayAvatarURL())
+      .addFields(
+        { name: "👤 User",        value: `${member} (\`${member.id}\`)`, inline: true },
+        { name: "📛 Username",    value: member.user.tag,                 inline: true },
+        { name: "📅 Account Age", value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`, inline: true },
+        { name: "👥 Members now", value: String(guild.memberCount),       inline: true },
+      )
+      .setFooter({ text: `${SERVER_NAME} • Member Log | User ID: ${member.id}` })
+      .setTimestamp();
+    await log.send({ embeds: [e] });
+  }
+
+  await updateVoiceChannels(guild);
+});
+
+// ══════════════════════════════════════════════════════════════
+//  PRESENCE / GUILD UPDATE (voice counters)
+// ══════════════════════════════════════════════════════════════
+client.on("presenceUpdate", async (_, after) => {
+  if (after?.guild) await updateVoiceChannels(after.guild);
+});
+
+client.on("guildUpdate", async (before, after) => {
+  if (before.premiumSubscriptionCount !== after.premiumSubscriptionCount)
+    await updateVoiceChannels(after);
+});
+
+// ══════════════════════════════════════════════════════════════
+//  READY
+// ══════════════════════════════════════════════════════════════
+client.once("ready", async () => {
+  console.log(`✅ Logged in as ${client.user.tag}`);
+
+  const guild = client.guilds.cache.get(GUILD_ID);
+  if (guild) {
+    await updateVoiceChannels(guild);
+    try {
+      const invs = await guild.invites.fetch();
+      inviteCache.set(guild.id, new Map(invs.map(i => [i.code, i.uses])));
+      console.log(`✅ Loaded ${invs.size} invite(s) into cache.`);
+    } catch (e) { console.error("⚠️ Invite cache error:", e); }
+  }
+
+  client.user.setActivity(SERVER_NAME, { type: ActivityType.Playing });
+  console.log(`🚀 ${SERVER_NAME} Bot is fully online!`);
+});
+
+// ══════════════════════════════════════════════════════════════
+//  START
+// ══════════════════════════════════════════════════════════════
+client.login(TOKEN);
