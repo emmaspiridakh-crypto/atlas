@@ -1097,9 +1097,8 @@ client.on("messageCreate", async message => {
     const e = new EmbedBuilder()
       .setTitle(`${E.SHOP} ${SERVER_NAME} — Support Panel`)
       const separator = new EmbedBuilder()
-      .setColor(0x2b2d31)
-      .setDescription('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-       setDescription(
+       .setColor(0x2b2d31)
+      setDescription(
         `**Open a ticket to get in touch with the right team member.**\n\n` +
         `${E.ADMIN} **Talk to Administrator** — Administration\n` +
         `${E.SUPPORT} **Support** — General help\n` +
@@ -1113,7 +1112,7 @@ client.on("messageCreate", async message => {
       .setThumbnail(SERVER_THUMBNAIL_URL)
     const separator = new EmbedBuilder()
       .setColor(0x2b2d31)
-      .setDescription('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      .setSeparator('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       setFooter({ text: `${SERVER_NAME} • Support System` });
     const row = new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
@@ -1147,7 +1146,7 @@ client.on("messageCreate", async message => {
       .setFooter(BANNER_BUY)
     const separator = new EmbedBuilder()
       .setColor(0x2b2d31)
-      .setDescription('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      .setSeparator('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       setThumbnail(SERVER_THUMBNAIL_URL)
       .setFooter({ text: `${SERVER_NAME} • Buy Panel` });
     const row = new ActionRowBuilder().addComponents(
@@ -1180,7 +1179,7 @@ client.on("messageCreate", async message => {
       .setThumbnail(SERVER_THUMBNAIL_URL)
     const separator = new EmbedBuilder()
       .setColor(0x2b2d31)
-      .setDescription('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+      .setSeparator('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
       .setFooter({ text: `${SERVER_NAME} • Services` });
     const row = new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
@@ -1210,7 +1209,7 @@ client.on("messageCreate", async message => {
       .setThumbnail(SERVER_THUMBNAIL_URL)
     const separator = new EmbedBuilder()
       .setColor(0x2b2d31)
-      .setDescription('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      .setSeparator('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       setFooter({ text: `${SERVER_NAME} • Suggestions` });
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -1237,7 +1236,7 @@ client.on("messageCreate", async message => {
       .setThumbnail(SERVER_THUMBNAIL_URL)
     const separator = new EmbedBuilder()
       .setColor(0x2b2d31)
-      .setDescription('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      .setSeparator('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       setFooter({ text: `${SERVER_NAME} • Reviews` });
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
