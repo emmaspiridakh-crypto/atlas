@@ -118,7 +118,7 @@ const E = {
   // ── Duty Panel ───────────────────────────────────────────────
   ON_DUTY:  "<a:green_dot:1490458485161459723>",
   OFF_DUTY: "<a:red_dot:1490458756729929858>",
-  STATUS:   "<a:list:1502334191294091335>",
+  STATUS:   "<a:clock:1504226549551988766>",
   LB:       "<a:trophy:1504192547579232357>",
 
   // ── Suggestion & Review ──────────────────────────────────────
@@ -129,6 +129,8 @@ const E = {
   TICKET:   "<a:ticket:1504195464768258071>",
   LOCK:     "<a:lock:1504195502957396118>",
   SHOP:     "<a:crown:1490461449640738857>",
+
+  SELECT:   "<a:select:1504217280974815272>"
 };
 
 // ══════════════════════════════════════════════════════════════
@@ -162,12 +164,6 @@ function saveJSON(file, data) { fs.writeFileSync(file, JSON.stringify(data, null
 let dutyData   = loadJSON(DUTY_FILE);
 let inviteData = loadJSON(INVITE_FILE);
 const inviteCache    = new Map();
-const pendingBots    = {};
-const spamTracker    = {};
-const banKickTracker = {};
-const WHITELISTED_BOT_IDS  = new Set();
-let ALT_ACCOUNT_AGE_DAYS   = 30;
-let ALT_AUTO_KICK           = true;
 
 // ══════════════════════════════════════════════════════════════
 //  DUTY HELPERS
@@ -184,26 +180,6 @@ function formatDuration(secs) {
   const m = Math.floor((secs % 3600) / 60);
   const s = Math.floor(secs % 60);
   return `${h}h ${m}m ${s}s`;
-}
-
-// ══════════════════════════════════════════════════════════════
-//  MASS BAN/KICK TRACKER
-// ══════════════════════════════════════════════════════════════
-async function trackMassAction(guild, moderator, actionType) {
-  if (!moderator) return;
-  const uid = moderator.id;
-  const now = Date.now() / 1000;
-  if (!banKickTracker[uid]) banKickTracker[uid] = [];
-  banKickTracker[uid].push(now);
-  banKickTracker[uid] = banKickTracker[uid].filter(t => now - t < 10);
-  if (banKickTracker[uid].length >= 3) {
-    banKickTracker[uid] = [];
-    const mm     = guild.members.cache.get(uid);
-    const exempt = [CEO_ROLE_ID, OWNER_ROLE_ID];
-    if (mm && !exempt.some(r => mm.roles.cache.has(r))) {
-      await mm.timeout(7 * 24 * 60 * 60 * 1000, `Mass ${actionType}`).catch(() => {});
-    }
-  }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -303,8 +279,8 @@ client.on("interactionCreate", async interaction => {
             .setTimestamp();
           await lc.send({ embeds: [e] });
         }
-        await interaction.reply({ content: `${E.LOCK} Closing in 4 seconds...` });
-        setTimeout(() => interaction.channel.delete().catch(() => {}), 4000);
+        await interaction.reply({ content: `${E.LOCK} Closing in 5 seconds...` });
+        setTimeout(() => interaction.channel.delete().catch(() => {}), 5000);
         return;
       }
 
@@ -432,7 +408,7 @@ client.on("interactionCreate", async interaction => {
       if (interaction.customId === "make_suggestion_btn") {
         const modal = new ModalBuilder()
           .setCustomId("suggestion_modal")
-          .setTitle("💡 Make a Suggestion")
+          .setTitle(" <a:bulb:1504192429149130963> Make a Suggestion")
           .addComponents(new ActionRowBuilder().addComponents(
             new TextInputBuilder()
               .setCustomId("suggestion_input")
@@ -448,19 +424,19 @@ client.on("interactionCreate", async interaction => {
       // ── Review Button ───────────────────────────────────────
       if (interaction.customId === "make_review_btn") {
         const e = new EmbedBuilder()
-          .setTitle(`${E.STAR} Select Your Rating`)
+          .setTitle(" <a:star:1504192429149130963> Select Your Rating")
           .setDescription("Choose your star rating, then write your review!")
           .setColor(0xffd700);
         const ratingRow = new ActionRowBuilder().addComponents(
           new StringSelectMenuBuilder()
             .setCustomId("star_select_review")
-            .setPlaceholder("⭐ Select your rating...")
+            .setPlaceholder("<a:star:1504192429149130963> Select your rating...")
             .addOptions([
-              { label: "⭐ 1 Star",          emoji: "⭐", value: "1" },
-              { label: "⭐⭐ 2 Stars",       emoji: "⭐", value: "2" },
-              { label: "⭐⭐⭐ 3 Stars",     emoji: "⭐", value: "3" },
-              { label: "⭐⭐⭐⭐ 4 Stars",   emoji: "⭐", value: "4" },
-              { label: "⭐⭐⭐⭐⭐ 5 Stars", emoji: "⭐", value: "5" },
+              { label: " <a:star:1504192429149130963> 1 Star",          emoji: "⭐", value: "1" },
+              { label: " <a:star:1504192429149130963> <a:star:1504192429149130963> 2 Stars",       emoji: "⭐", value: "2" },
+              { label: " <a:star:1504192429149130963> <a:star:1504192429149130963> <a:star:1504192429149130963> 3 Stars",     emoji: "⭐", value: "3" },
+              { label: " <a:star:1504192429149130963> <a:star:1504192429149130963> <a:star:1504192429149130963> <a:star:1504192429149130963> 4 Stars",   emoji: "⭐", value: "4" },
+              { label: " <a:star:1504192429149130963> <a:star:1504192429149130963> <a:star:1504192429149130963> <a:star_outline:1504192429149130963> 5 Stars", emoji: "⭐", value: "5" },
             ])
         );
         return interaction.reply({ embeds: [e], components: [ratingRow], ephemeral: true });
@@ -600,7 +576,7 @@ client.on("interactionCreate", async interaction => {
         const stars = parseInt(interaction.values[0]);
         const modal = new ModalBuilder()
           .setCustomId(`review_modal_${stars}`)
-          .setTitle("⭐ Write a Review")
+          .setTitle("<a:star:1504192429149130963> Write a Review")
           .addComponents(new ActionRowBuilder().addComponents(
             new TextInputBuilder()
               .setCustomId("review_input")
@@ -642,7 +618,7 @@ client.on("interactionCreate", async interaction => {
         const text     = interaction.fields.getTextInputValue("review_input");
         const ch       = interaction.guild.channels.cache.get(REVIEW_CHANNEL_ID);
         if (!ch) return interaction.reply({ content: "❌ Channel not found.", ephemeral: true });
-        const sd       = "⭐".repeat(stars) + "☆".repeat(5 - stars);
+        const sd       = " <a:star:1504192429149130963> ".repeat(stars) + " <a:star_outline:1504192429149130963> ".repeat(5 - stars);
         const colorMap = { 1: 0xff0000, 2: 0xff8800, 3: 0xffff00, 4: 0x00ff00, 5: 0xffd700 };
         const e = new EmbedBuilder()
           .setTitle(`${E.STAR} New Review`)
@@ -900,7 +876,7 @@ client.on("guildMemberRemove", async member => {
   const logs = await member.guild.fetchAuditLogs({ limit: 3, type: AuditLogEvent.MemberKick }).catch(() => null);
   if (logs) {
     for (const [, entry] of logs.entries) {
-      if (entry.target?.id === member.id && (Date.now() - entry.createdTimestamp) < 5000) {
+      if (entry.target?.id === member.id && (Date.now() - entry.createdTimestamp) < 0) {
         await trackMassAction(member.guild, entry.executor, "kick");
         break;
       }
@@ -991,7 +967,7 @@ client.on("messageCreate", async message => {
     if (!amount) return message.reply("Usage: `!clearmessage <amount>`");
     await message.channel.bulkDelete(amount + 1, true);
     const m = await message.channel.send(`🧹 Deleted **${amount}** message(s).`);
-    setTimeout(() => m.delete().catch(() => {}), 3000);
+    setTimeout(() => m.delete().catch(() => {}), 2000);
     return;
   }
 
@@ -1088,20 +1064,6 @@ client.on("messageCreate", async message => {
     return message.reply(`📨 Delivered to **${sent}** member(s). ❌ Failed: **${failed}**.`);
   }
 
-  // ── SECURITY SETTINGS ───────────────────────────────────────
-  if (command === "setaltdays") {
-    if (!isCeo(member)) return message.reply("❌ CEO only.");
-    const days = parseInt(args[0]);
-    if (!days || days < 1) return message.reply(`Current threshold: **${ALT_ACCOUNT_AGE_DAYS} days**\nUsage: \`!setaltdays <days>\``);
-    ALT_ACCOUNT_AGE_DAYS = days;
-    return message.reply(`✅ New alt threshold: **${days} days**`);
-  }
-
-  if (command === "togglealtban") {
-    if (!isCeo(member)) return message.reply("❌ CEO only.");
-    ALT_AUTO_KICK = !ALT_AUTO_KICK;
-    return message.reply(`Alt auto-kick: ${ALT_AUTO_KICK ? "✅ **Enabled**" : "❌ **Disabled**"}`);
-  }
 
   // ── PANELS ───────────────────────────────────────────────────
   if (command === "dutypanel") {
@@ -1111,22 +1073,22 @@ client.on("messageCreate", async message => {
       .setDescription(
         `Press **On Duty** when your shift starts and **Off Duty** when it ends.\n\n` +
         `${E.STATUS} **Duty Status** — See who is on duty right now\n` +
-        `${E.LB} **Leaderboard** — All-time duty hours`
+        `${E.LB} **Leaderboard** — All duty hours`
       )
       .setColor(0x00ff00)
       .setThumbnail(SERVER_THUMBNAIL_URL)
       .setFooter({ text: `${SERVER_NAME} • Duty System` });
     const row1 = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId("duty_on").setLabel("🟢 On Duty").setStyle(ButtonStyle.Success),
-      new ButtonBuilder().setCustomId("duty_off").setLabel("🔴 Off Duty").setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId("duty_on").setLabel("<a:green_dot:1490458485161459723> On Duty").setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId("duty_off").setLabel("<a:red_dot:1490458485161459723> Off Duty").setStyle(ButtonStyle.Danger),
     );
     const row2 = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId("duty_status").setLabel("📋 Duty Status").setStyle(ButtonStyle.Primary),
-      new ButtonBuilder().setCustomId("duty_leaderboard_btn").setLabel("🏆 Leaderboard").setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId("duty_status").setLabel("<a:clock:1504226549551988766> Duty Status").setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId("duty_leaderboard_btn").setLabel("<a:trophy:1502334191294091335> Leaderboard").setStyle(ButtonStyle.Secondary),
     );
     await message.channel.send({ embeds: [e], components: [row1, row2] });
     const m = await message.reply("✅ Panel sent.");
-    setTimeout(() => m.delete().catch(() => {}), 2000);
+    setTimeout(() => m.delete().catch(() => {}), 1000);
     return;
   }
 
@@ -1134,34 +1096,40 @@ client.on("messageCreate", async message => {
     if (!isCeo(member)) return message.reply("❌ CEO only.");
     const e = new EmbedBuilder()
       .setTitle(`${E.SHOP} ${SERVER_NAME} — Support Panel`)
-      .setDescription(
+      const separator = new EmbedBuilder()
+      .setColor(0x2b2d31)
+      .setDescription('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+       setDescription(
         `**Open a ticket to get in touch with the right team member.**\n\n` +
         `${E.ADMIN} **Talk to Administrator** — Administration\n` +
         `${E.SUPPORT} **Support** — General help\n` +
         `${E.REPORT} **Report** — Report a user\n` +
         `${E.PURCHASE} **Help with a Purchase** — Order assistance\n` +
         `${E.OTHER} **Other** — Anything else\n\n` +
-        `*One active ticket at a time.*`
+        `*Remember to read the server rules.*`
       )
       .setColor(0x141428)
-      .setImage(BANNER_SUPPORT)
+      .setFooter(BANNER_SUPPORT)
       .setThumbnail(SERVER_THUMBNAIL_URL)
-      .setFooter({ text: `${SERVER_NAME} • Support System` });
+    const separator = new EmbedBuilder()
+      .setColor(0x2b2d31)
+      .setDescription('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      setFooter({ text: `${SERVER_NAME} • Support System` });
     const row = new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId("support_ticket_select")
-        .setPlaceholder("📂 Select a category...")
+        .setPlaceholder(`${E.SELECT} Select a category...`)
         .addOptions([
-          { label: "Talk to Administrator", description: "Administration",       emoji: "👑", value: "admin"    },
-          { label: "Support",               description: "General help",          emoji: "💬", value: "support"  },
-          { label: "Report",                description: "Report a user",         emoji: "📋", value: "report"   },
-          { label: "Help with a Purchase",  description: "Order assistance",      emoji: "🛒", value: "purchase" },
-          { label: "Other",                 description: "Anything else",         emoji: "📌", value: "other"    },
+          { label: "Talk to Administrator", description: "Ownership",    "<a:crown:1490461449640738857>"  : "admin"    },
+          { label: "Support",               description: "General help",      "<a:help:1490461447260860160>"   : "support"  },
+          { label: "Report",                description: "Report a user or Creator",     "<a:report:1490461448934727680>" : "report"   },
+          { label: "Help with a Purchase",  description: "Purchase assistance",  "<a:purchase:1490461448307692544>" : "purchase" },
+          { label: "Other",                 description: "Anything else",     "<a:other:1490461448826524938>" : "other"    },
         ])
     );
     await message.channel.send({ embeds: [e], components: [row] });
     const m = await message.reply("✅ Panel sent.");
-    setTimeout(() => m.delete().catch(() => {}), 2000);
+    setTimeout(() => m.delete().catch(() => {}), 1000);
     return;
   }
 
@@ -1170,27 +1138,30 @@ client.on("messageCreate", async message => {
     const e = new EmbedBuilder()
       .setTitle(`${E.BUY} ${SERVER_NAME} — Buy Panel`)
       .setDescription(
-        `**Ready to make a purchase? Choose a category below.**\n\n` +
-        `${E.BUY} **Buy a Product** — Browse & purchase\n` +
+        `**Ready to make a purchase? Choose a category below, **Remember to check the payment methods first and follow the instructions**.**\n\n` +
+        `${E.BUY} **Buy a Product** — Make a purchase\n` +
         `${E.ORDER} **Make an Order** — Custom order\n\n` +
-        `*One active ticket at a time.*`
+        `*Make sure that you have read the payment rules.*`
       )
       .setColor(0x141428)
-      .setImage(BANNER_BUY)
-      .setThumbnail(SERVER_THUMBNAIL_URL)
+      .setFooter(BANNER_BUY)
+    const separator = new EmbedBuilder()
+      .setColor(0x2b2d31)
+      .setDescription('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      setThumbnail(SERVER_THUMBNAIL_URL)
       .setFooter({ text: `${SERVER_NAME} • Buy Panel` });
     const row = new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId("buy_ticket_select")
-        .setPlaceholder("🛒 Select a category...")
+        .setPlaceholder(`${E.SELECT} Select a category...`)
         .addOptions([
-          { label: "Buy a Product", description: "Browse & purchase", emoji: "🛍️", value: "buy_product" },
-          { label: "Make an Order", description: "Custom order",      emoji: "📦", value: "make_order"  },
+          { label: "Buy a Product", description: "Make a purchase", "<a:bag:1504192825959383040>"  : "buy_product" },
+          { label: "Make an Order", description: "Custom order",      "<a:box:1504192825959383040>" : "make_order"  },
         ])
     );
     await message.channel.send({ embeds: [e], components: [row] });
     const m = await message.reply("✅ Panel sent.");
-    setTimeout(() => m.delete().catch(() => {}), 2000);
+    setTimeout(() => m.delete().catch(() => {}), 1000);
     return;
   }
 
@@ -1199,25 +1170,29 @@ client.on("messageCreate", async message => {
     const e = new EmbedBuilder()
       .setTitle(`${E.SERVICE} ${SERVER_NAME} — Services`)
       .setDescription(
-        `**Interested in one of our professional services?**\n\n` +
+        `**Interested in one of our services? Open a ticket!**\n` +
+        `**Make sure when you open a ticket for a service, you tell us about what service you're interested in.**\n\n` + 
         `${E.SERVICE} **Buy a Service** — Premium service\n\n` +
         `*One active ticket at a time.*`
       )
       .setColor(0x5865f2)
-      .setImage(BANNER_SERVICES)
+      .setFooter(BANNER_SERVICES)
       .setThumbnail(SERVER_THUMBNAIL_URL)
+    const separator = new EmbedBuilder()
+      .setColor(0x2b2d31)
+      .setDescription('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
       .setFooter({ text: `${SERVER_NAME} • Services` });
     const row = new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
         .setCustomId("services_ticket_select")
-        .setPlaceholder("⚙️ Select a service...")
+        .setPlaceholder(`${E.SELECT} Select a service...`)
         .addOptions([
-          { label: "Buy a Service", description: "Premium service", emoji: "⚙️", value: "buy_service" },
+          { label: "Buy a Service", description: "Premium service", "<a:service:1504192825959383040>" : "buy_service" },
         ])
     );
     await message.channel.send({ embeds: [e], components: [row] });
     const m = await message.reply("✅ Panel sent.");
-    setTimeout(() => m.delete().catch(() => {}), 2000);
+    setTimeout(() => m.delete().catch(() => {}), 1000);
     return;
   }
 
@@ -1231,18 +1206,21 @@ client.on("messageCreate", async message => {
         `The community votes 👍 / 👎`
       )
       .setColor(0x5865f2)
-      .setImage(BANNER_SUGGEST)
+      .setFooter(BANNER_SUGGEST)
       .setThumbnail(SERVER_THUMBNAIL_URL)
-      .setFooter({ text: `${SERVER_NAME} • Suggestions` });
+    const separator = new EmbedBuilder()
+      .setColor(0x2b2d31)
+      .setDescription('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      setFooter({ text: `${SERVER_NAME} • Suggestions` });
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId("make_suggestion_btn")
-        .setLabel("💡 Make a Suggestion")
+        .setLabel(`${E.IDEA} Make a Suggestion`)
         .setStyle(ButtonStyle.Primary)
     );
     await message.channel.send({ embeds: [e], components: [row] });
     const m = await message.reply("✅ Panel sent.");
-    setTimeout(() => m.delete().catch(() => {}), 2000);
+    setTimeout(() => m.delete().catch(() => {}), 1000);
     return;
   }
 
@@ -1251,27 +1229,30 @@ client.on("messageCreate", async message => {
     const e = new EmbedBuilder()
       .setTitle(`${E.STAR} ${SERVER_NAME} — Reviews`)
       .setDescription(
-        `**How was your experience?**\n` +
+        `**How was your experience with us?**\n` +
         `Rate 1–5 and leave a comment!`
       )
       .setColor(0xffd700)
-      .setImage(BANNER_REVIEW)
+      .setFooter(BANNER_REVIEW)
       .setThumbnail(SERVER_THUMBNAIL_URL)
-      .setFooter({ text: `${SERVER_NAME} • Reviews` });
+    const separator = new EmbedBuilder()
+      .setColor(0x2b2d31)
+      .setDescription('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      setFooter({ text: `${SERVER_NAME} • Reviews` });
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId("make_review_btn")
-        .setLabel("⭐ Write a Review")
+        .setLabel(`${E.STAR} Write a Review`)
         .setStyle(ButtonStyle.Primary)
     );
     await message.channel.send({ embeds: [e], components: [row] });
     const m = await message.reply("✅ Panel sent.");
-    setTimeout(() => m.delete().catch(() => {}), 2000);
+    setTimeout(() => m.delete().catch(() => {}), 1000);
     return;
   }
 
   // ── HELP PANELS ──────────────────────────────────────────────
-  if (command === "panel") {
+  if (command === "ceo") {
     if (!isCeo(member)) return message.reply("❌ CEO only.");
     const e = new EmbedBuilder()
       .setTitle(`📌 ${SERVER_NAME} — CEO Panel`)
@@ -1289,7 +1270,7 @@ client.on("messageCreate", async message => {
     return message.reply({ embeds: [e] });
   }
 
-  if (command === "panel2") {
+  if (command === "ownercoowner") {
     if (!isOwnerOrAbove(member)) return message.reply("❌ Owner / Co-Owner / CEO only.");
     const e = new EmbedBuilder()
       .setTitle(`📌 ${SERVER_NAME} — Owner Panel`)
@@ -1305,7 +1286,7 @@ client.on("messageCreate", async message => {
     return message.reply({ embeds: [e] });
   }
 
-  if (command === "panel3") {
+  if (command === "staff") {
     if (!isStaffOrAbove(member)) return message.reply("❌ You don't have permission.");
     const e = new EmbedBuilder()
       .setTitle(`📌 ${SERVER_NAME} — Staff Panel`)
@@ -1352,12 +1333,6 @@ client.on("guildMemberAdd", async member => {
     return;
   }
 
-  // ── Alt detection ───────────────────────────────────────────
-  const ageDays = Math.floor((Date.now() - member.user.createdTimestamp) / 86400000);
-  if (ageDays < ALT_ACCOUNT_AGE_DAYS) {
-    if (ALT_AUTO_KICK) await member.kick(`Alt account — age: ${ageDays} days`).catch(() => {});
-    if (ALT_AUTO_KICK) return;
-  }
 
   // ── Auto-role ───────────────────────────────────────────────
   const autoRole = guild.roles.cache.get(AUTOROLE_ID);
@@ -1400,7 +1375,7 @@ client.on("guildMemberAdd", async member => {
       .addFields(
         { name: "👤 User",        value: `${member} (\`${member.id}\`)`, inline: true },
         { name: "📛 Username",    value: member.user.tag,                 inline: true },
-        { name: "📅 Account Age", value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`, inline: true },
+        { name: "📅 Account Age", value: `<t:${Math.floor(member.user.createdTimestamp / 0)}:R>`, inline: true },
         { name: "👥 Members now", value: String(guild.memberCount),       inline: true },
       )
       .setFooter({ text: `${SERVER_NAME} • Member Log | User ID: ${member.id}` }).setTimestamp();
