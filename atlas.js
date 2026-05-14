@@ -88,43 +88,38 @@ const TEMP_VOICE_CHANNEL_ID  = "1502340058399641670";
 // ══════════════════════════════════════════════════════════════
 const SERVER_NAME          = "Glorious Shop";
 const SERVER_THUMBNAIL_URL = "https://i.imgur.com/F6vMnVL.jpeg";
-const BANNER_SUPPORT       = "https://i.imgur.com/YL0btaL.jpeg";
-const BANNER_BUY           = "https://i.imgur.com/YL0btaL.jpeg";
-const BANNER_SERVICES      = "https://i.imgur.com/YL0btaL.jpeg";
-const BANNER_SUGGEST       = "https://i.imgur.com/YL0btaL.jpeg";
-const BANNER_REVIEW        = "https://i.imgur.com/YL0btaL.jpeg";
 
 // Διαχωριστική γραμμή μεταξύ categories
-const LINE = "─────────────────────────────";
+const LINE = "─────────────────────────";
 
-// ══════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════
 //  ANIMATED EMOJIS
 //  ⚠️  Άλλαξε τα IDs με τα δικά σου
 //  Πώς βρίσκεις: γράψε \:emoji_name: στο Discord → Enter
 // ══════════════════════════════════════════════════════════════
 const E = {
-  ADMIN:    "<a:crown:1490461449640738857>",
+  ADMIN:    "<a:crown:1504491097940820119>",
   SUPPORT:  "<a:chat:1502334226144690186>",
   REPORT:   "<a:report:1502334207794348154>",
   PURCHASE: "<a:cart:1502334209660817498>",
   OTHER:    "<a:pin:1504192757491830804>",
   BUY:      "<a:bag:1504192825959383040>",
-  ORDER:    "<a:box:1504192607843127296>",
+  ORDER:    "<a:box:1504491199140986901>",
   SERVICE:  "<a:gear:1490461399267147797>",
   ON_DUTY:  "<a:green_dot:1490458485161459723>",
   OFF_DUTY: "<a:red_dot:1490458756729929858>",
-  STATUS:   "<a:clock:1504226549551988766>",
+  STATUS:   "<a:clock:1504491055364702359>",
   LB:       "<a:trophy:1504192547579232357>",
   IDEA:     "<a:bulb:1502334216409710752>",
   STAR:     "<a:star:1504192429149130963>",
-  TICKET:   "<a:ticket:1504195464768258071>",
-  LOCK:     "<a:lock:1504195502957396118>",
-  SHOP:     "<a:crown:1490461449640738857>",
+  TICKET:   "<a:ticket:1504491033990402219>",
+  LOCK:     "<a:lock:1504491078030725120>",
+  SHOP:     "<a:crown:1504491097940820119>",
 };
 
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 //  PERMISSION HELPERS
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 function hasRole(member, ...roleIds) {
   return roleIds.some(id => member.roles.cache.has(id));
 }
@@ -282,7 +277,6 @@ function buildSupportPanel() {
     .setTitle(`${E.SHOP} ${SERVER_NAME} — Support Panel`)
     .setDescription(desc)
     .setColor(0x2b2d31)
-    .setImage(BANNER_SUPPORT)
     .setThumbnail(SERVER_THUMBNAIL_URL)
     .setFooter({ text: `${SERVER_NAME} • Support System` });
 
@@ -318,7 +312,6 @@ function buildBuyPanel() {
     .setTitle(`${E.BUY} ${SERVER_NAME} — Buy Panel`)
     .setDescription(desc)
     .setColor(0x2b2d31)
-    .setImage(BANNER_BUY)
     .setThumbnail(SERVER_THUMBNAIL_URL)
     .setFooter({ text: `${SERVER_NAME} • Buy Panel` });
 
@@ -348,7 +341,6 @@ function buildServicesPanel() {
     .setTitle(`${E.SERVICE} ${SERVER_NAME} — Services`)
     .setDescription(desc)
     .setColor(0x2b2d31)
-    .setImage(BANNER_SERVICES)
     .setThumbnail(SERVER_THUMBNAIL_URL)
     .setFooter({ text: `${SERVER_NAME} • Services` });
 
@@ -424,7 +416,6 @@ function buildSuggestionPanel() {
       `${LINE}`
     )
     .setColor(0x2b2d31)
-    .setImage(BANNER_SUGGEST)
     .setThumbnail(SERVER_THUMBNAIL_URL)
     .setFooter({ text: `${SERVER_NAME} • Suggestions` });
 
@@ -450,7 +441,6 @@ function buildReviewPanel() {
       `${LINE}`
     )
     .setColor(0x2b2d31)
-    .setImage(BANNER_REVIEW)
     .setThumbnail(SERVER_THUMBNAIL_URL)
     .setFooter({ text: `${SERVER_NAME} • Reviews` });
 
@@ -719,7 +709,6 @@ client.on("interactionCreate", async interaction => {
         };
         return createTicketChannel(interaction, {
           categoryId: SUPPORT_CATEGORY_ID,
-          banner:     BANNER_SUPPORT,
           footer:     `${SERVER_NAME} • Support System`,
           ...configs[interaction.values[0]],
         });
@@ -733,7 +722,7 @@ client.on("interactionCreate", async interaction => {
             name:    `buy-${author.username}`.toLowerCase().replace(/ /g, "-"),
             title:   `${E.BUY} Buy a Product`,
             roleIds: [CEO_ROLE_ID, DONATE_MANAGER_ROLE_ID],
-            desc:    `Hello ${author}! ${E.BUY}\n\nThank you for your interest in purchasing a product!\nPlease let us know **what you'd like to buy** and a team member will assist you.\n\n*One active ticket at a time.*`,
+            desc:    `Hello ${author}! ${E.BUY}\n\nThank you for your interest in purchasing a product!\nPlease let us know **what you'd like to buy** and a team member will assist you.\n\n*Remember to read the payment methods.*`,
             color:   0x00ff00,
           },
           make_order: {
@@ -746,7 +735,6 @@ client.on("interactionCreate", async interaction => {
         };
         return createTicketChannel(interaction, {
           categoryId: BUY_PANEL_CATEGORY_ID,
-          banner:     BANNER_BUY,
           footer:     `${SERVER_NAME} • Buy Panel`,
           ...configs[interaction.values[0]],
         });
@@ -762,7 +750,6 @@ client.on("interactionCreate", async interaction => {
           roleIds:    [CEO_ROLE_ID],
           desc:       `Hello ${author}! ${E.SERVICE}\n\nThank you for your interest in one of our **services**!\nPlease describe the service you'd like and our CEO team will be in touch shortly.\n\n*One active ticket at a time.*`,
           color:      0x5865f2,
-          banner:     BANNER_SERVICES,
           footer:     `${SERVER_NAME} • Services`,
         });
       }
