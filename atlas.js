@@ -103,8 +103,8 @@ const E = {
   REPORT:   "<a:report:1502334207794348154>",
   PURCHASE: "<a:cart:1502334209660817498>",
   OTHER:    "<a:pin:1504192757491830804>",
-  BUY:      "<a:bag:1504192825959383040>",
-  ORDER:    "<a:box:1504491199140986901>",
+  BUY:      "<a:money:1504495701361692793>",
+  ORDER:    "<a:tools:1504496169706061924>",
   SERVICE:  "<a:gear:1490461399267147797>",
   ON_DUTY:  "<a:green_dot:1490458485161459723>",
   OFF_DUTY: "<a:red_dot:1490458756729929858>",
@@ -211,7 +211,6 @@ async function createTicketChannel(interaction, { categoryId, name, title, desc,
     .setTitle(title)
     .setDescription(desc)
     .setColor(color)
-    .setImage(banner)
     .setThumbnail(SERVER_THUMBNAIL_URL)
     .setFooter({ text: footer });
 
@@ -320,8 +319,8 @@ function buildBuyPanel() {
       .setCustomId("buy_ticket_select")
       .setPlaceholder("🛒 Select a category...")
       .addOptions([
-        { label: "Buy a Product", description: "Browse & purchase", emoji: { id: "1504192825959383040", name: "bag",   animated: true }, value: "buy_product" },
-        { label: "Make an Order", description: "Custom order",      emoji: { id: "1504192607843127296", name: "box",   animated: true }, value: "make_order"  },
+        { label: "Buy a Product", description: "Browse & purchase", emoji: { id: "1504495701361692793", name: "money",   animated: true }, value: "buy_product" },
+        { label: "Make an Order", description: "Custom order",      emoji: { id: "1504496169706061924", name: "tools",   animated: true }, value: "make_order"  },
       ])
   );
 
